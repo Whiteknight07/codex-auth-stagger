@@ -59,7 +59,7 @@ Detailed command documentation lives in [docs/commands/README.md](./docs/command
 > If you want to downgrade to **v0.2.x**, you may need to manually update the `~/.codex/accounts/registry.json`:
 >
 > ```json
-> "schema_version": 4
+> "schema_version": 3
 > ```
 
 ### Account Management
