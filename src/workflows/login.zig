@@ -27,6 +27,7 @@ pub fn handleLogin(allocator: std.mem.Allocator, codex_home: []const u8, opts: c
     const login_codex_home = try loginScratchCodexHomeAlloc(allocator, codex_home);
     defer allocator.free(login_codex_home);
     defer std.Io.Dir.cwd().deleteTree(app_runtime.io(), login_codex_home) catch {};
+    try registry.ensurePrivateDir(login_codex_home);
 
     try cli.login.runCodexLogin(opts, login_codex_home);
     const login_auth_path = try registry.activeAuthPath(allocator, login_codex_home);
