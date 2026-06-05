@@ -23,7 +23,7 @@ pub const WindowsCodexPath = struct {
 };
 
 const CodexLaunch = struct {
-    owned_paths: [2]?[]u8 = .{ null, null },
+    owned_paths: [1]?[]u8 = .{null},
     argv_storage: [9][]const u8 = undefined,
     argv_len: usize = 0,
 
@@ -38,6 +38,8 @@ const CodexLaunch = struct {
     }
 };
 
+const WindowsCodexPathList = std.ArrayList(WindowsCodexPath);
+
 pub fn codexLoginArgs(opts: types.LoginOptions) []const []const u8 {
     return if (opts.device_auth)
         &[_][]const u8{ "codex", "login", "--device-auth" }
@@ -49,19 +51,20 @@ pub fn resolveWindowsCodexPathEntryAlloc(
     allocator: std.mem.Allocator,
     entry: []const u8,
 ) !?WindowsCodexPath {
-    const candidates = [_]struct {
-        name: []const u8,
-        kind: WindowsCodexPathKind,
-    }{
-        .{ .name = "codex.exe", .kind = .exe },
-        .{ .name = "codex.cmd", .kind = .cmd },
-        .{ .name = "codex.ps1", .kind = .ps1 },
-    };
+    const path_ext = try resolveWindowsCodexPathExtAlloc(allocator);
+    defer allocator.free(path_ext);
 
-    for (candidates) |candidate| {
-        if (try resolvePathEntryCandidateAlloc(allocator, entry, candidate.name)) |path| {
-            return .{ .path = path, .kind = candidate.kind };
-        }
+    return resolveWindowsCodexPathEntryWithPathExtAlloc(allocator, entry, path_ext);
+}
+
+pub fn resolveWindowsCodexPathEntriesWithPathExtAlloc(
+    allocator: std.mem.Allocator,
+    entries: []const []const u8,
+    path_ext: []const u8,
+) !?WindowsCodexPath {
+    for (entries) |entry| {
+        if (entry.len == 0) continue;
+        if (try resolveWindowsCodexPathEntryWithPathExtAlloc(allocator, entry, path_ext)) |resolved| return resolved;
     }
 
     return null;
@@ -71,11 +74,10 @@ pub fn resolveWindowsCodexPathEntriesAlloc(
     allocator: std.mem.Allocator,
     entries: []const []const u8,
 ) !?WindowsCodexPath {
-    for (entries) |entry| {
-        if (entry.len == 0) continue;
-        if (try resolveWindowsCodexPathEntryAlloc(allocator, entry)) |resolved| return resolved;
-    }
-    return null;
+    const path_ext = try resolveWindowsCodexPathExtAlloc(allocator);
+    defer allocator.free(path_ext);
+
+    return resolveWindowsCodexPathEntriesWithPathExtAlloc(allocator, entries, path_ext);
 }
 
 fn resolvePathEntryCandidateAlloc(
@@ -94,6 +96,89 @@ fn resolvePathEntryCandidateAlloc(
     return candidate;
 }
 
+fn windowsCodexCandidateName(kind: WindowsCodexPathKind) []const u8 {
+    return switch (kind) {
+        .exe => "codex.exe",
+        .cmd => "codex.cmd",
+        .ps1 => "codex.ps1",
+    };
+}
+
+fn windowsCodexPathExtKind(ext: []const u8) ?WindowsCodexPathKind {
+    if (std.ascii.eqlIgnoreCase(ext, ".exe")) return .exe;
+    if (std.ascii.eqlIgnoreCase(ext, ".cmd")) return .cmd;
+    return null;
+}
+
+fn resolveWindowsCodexPathExtAlloc(allocator: std.mem.Allocator) ![]u8 {
+    return http_env.getEnvVarOwned(allocator, "PATHEXT") catch |err| switch (err) {
+        error.EnvironmentVariableNotFound => try allocator.dupe(u8, ".EXE;.CMD"),
+        else => return err,
+    };
+}
+
+fn appendWindowsCodexPathCandidateIfAvailable(
+    allocator: std.mem.Allocator,
+    candidates: *WindowsCodexPathList,
+    entry: []const u8,
+    kind: WindowsCodexPathKind,
+) !void {
+    if (try resolvePathEntryCandidateAlloc(allocator, entry, windowsCodexCandidateName(kind))) |path| {
+        try candidates.append(allocator, .{ .path = path, .kind = kind });
+    }
+}
+
+fn appendWindowsCodexPathEntryCandidatesAlloc(
+    allocator: std.mem.Allocator,
+    candidates: *WindowsCodexPathList,
+    entry: []const u8,
+    path_ext: []const u8,
+) !void {
+    var seen_exe = false;
+    var seen_cmd = false;
+
+    var ext_it = std.mem.splitScalar(u8, path_ext, ';');
+    while (ext_it.next()) |raw_ext| {
+        const ext = std.mem.trim(u8, raw_ext, " \t");
+        const kind = windowsCodexPathExtKind(ext) orelse continue;
+        switch (kind) {
+            .exe => {
+                if (seen_exe) continue;
+                seen_exe = true;
+            },
+            .cmd => {
+                if (seen_cmd) continue;
+                seen_cmd = true;
+            },
+            .ps1 => unreachable,
+        }
+        try appendWindowsCodexPathCandidateIfAvailable(allocator, candidates, entry, kind);
+    }
+
+    try appendWindowsCodexPathCandidateIfAvailable(allocator, candidates, entry, .ps1);
+}
+
+fn deinitWindowsCodexPathList(allocator: std.mem.Allocator, candidates: *WindowsCodexPathList) void {
+    for (candidates.items) |*candidate| candidate.deinit(allocator);
+    candidates.deinit(allocator);
+}
+
+fn resolveWindowsCodexPathEntryWithPathExtAlloc(
+    allocator: std.mem.Allocator,
+    entry: []const u8,
+    path_ext: []const u8,
+) !?WindowsCodexPath {
+    var candidates: WindowsCodexPathList = .empty;
+    errdefer deinitWindowsCodexPathList(allocator, &candidates);
+
+    try appendWindowsCodexPathEntryCandidatesAlloc(allocator, &candidates, entry, path_ext);
+    if (candidates.items.len == 0) return null;
+
+    const resolved = candidates.orderedRemove(0);
+    deinitWindowsCodexPathList(allocator, &candidates);
+    return resolved;
+}
+
 fn accessPath(path: []const u8) bool {
     if (std.fs.path.isAbsolute(path)) {
         std.Io.Dir.accessAbsolute(app_runtime.io(), path, .{}) catch return false;
@@ -104,20 +189,36 @@ fn accessPath(path: []const u8) bool {
     return true;
 }
 
-fn resolveWindowsCodexPathAlloc(allocator: std.mem.Allocator) !?WindowsCodexPath {
+fn resolveWindowsCodexPathValueAlloc(
+    allocator: std.mem.Allocator,
+    path_value: []const u8,
+    path_ext: []const u8,
+    candidates: *WindowsCodexPathList,
+) !void {
+    var path_it = std.mem.splitScalar(u8, path_value, std.fs.path.delimiter);
+    while (path_it.next()) |entry| {
+        if (entry.len == 0) continue;
+        try appendWindowsCodexPathEntryCandidatesAlloc(allocator, candidates, entry, path_ext);
+    }
+}
+
+fn collectWindowsCodexPathsAlloc(allocator: std.mem.Allocator) !WindowsCodexPathList {
+    const path_ext = try resolveWindowsCodexPathExtAlloc(allocator);
+    defer allocator.free(path_ext);
+
+    var candidates: WindowsCodexPathList = .empty;
+    errdefer deinitWindowsCodexPathList(allocator, &candidates);
+
+    try appendWindowsCodexPathEntryCandidatesAlloc(allocator, &candidates, ".", path_ext);
+
     const path_value = http_env.getEnvVarOwned(allocator, "PATH") catch |err| switch (err) {
-        error.EnvironmentVariableNotFound => return null,
+        error.EnvironmentVariableNotFound => return candidates,
         else => return err,
     };
     defer allocator.free(path_value);
 
-    var path_it = std.mem.splitScalar(u8, path_value, std.fs.path.delimiter);
-    while (path_it.next()) |entry| {
-        if (entry.len == 0) continue;
-        if (try resolveWindowsCodexPathEntryAlloc(allocator, entry)) |resolved| return resolved;
-    }
-
-    return null;
+    try resolveWindowsCodexPathValueAlloc(allocator, path_value, path_ext, &candidates);
+    return candidates;
 }
 
 fn resolveOptionalExecutableAlloc(
@@ -133,24 +234,26 @@ fn resolveOptionalExecutableAlloc(
 fn resolveWindowsPowerShellExecutableAlloc(allocator: std.mem.Allocator) ![]u8 {
     if (try resolveOptionalExecutableAlloc(allocator, "powershell.exe")) |path| return path;
     if (try resolveOptionalExecutableAlloc(allocator, "pwsh.exe")) |path| return path;
-    return error.FileNotFound;
+    return error.PowerShellNotFound;
 }
 
 fn buildCodexLaunchAlloc(allocator: std.mem.Allocator, opts: types.LoginOptions) !CodexLaunch {
-    if (builtin.os.tag != .windows) {
-        var launch = CodexLaunch{};
-        const args = codexLoginArgs(opts);
-        @memcpy(launch.argv_storage[0..args.len], args);
-        launch.argv_len = args.len;
-        return launch;
-    }
+    _ = allocator;
+    var launch = CodexLaunch{};
+    const args = codexLoginArgs(opts);
+    @memcpy(launch.argv_storage[0..args.len], args);
+    launch.argv_len = args.len;
+    return launch;
+}
 
-    var resolved = (try resolveWindowsCodexPathAlloc(allocator)) orelse return error.FileNotFound;
-    errdefer resolved.deinit(allocator);
-
+fn buildWindowsCodexLaunchAlloc(
+    allocator: std.mem.Allocator,
+    resolved: *const WindowsCodexPath,
+    opts: types.LoginOptions,
+) !CodexLaunch {
     switch (resolved.kind) {
         .exe, .cmd => {
-            var launch = CodexLaunch{ .owned_paths = .{ resolved.path, null } };
+            var launch = CodexLaunch{};
             launch.argv_storage[0] = resolved.path;
             launch.argv_storage[1] = "login";
             launch.argv_len = 2;
@@ -164,7 +267,7 @@ fn buildCodexLaunchAlloc(allocator: std.mem.Allocator, opts: types.LoginOptions)
             const powershell = try resolveWindowsPowerShellExecutableAlloc(allocator);
             errdefer allocator.free(powershell);
 
-            var launch = CodexLaunch{ .owned_paths = .{ powershell, resolved.path } };
+            var launch = CodexLaunch{ .owned_paths = .{powershell} };
             launch.argv_storage[0] = powershell;
             launch.argv_storage[1] = "-NoLogo";
             launch.argv_storage[2] = "-NoProfile";
@@ -201,10 +304,67 @@ fn writeCodexLoginLaunchFailureHint(err_name: []const u8) !void {
     try out.flush();
 }
 
+fn shouldRetryWindowsCodexLaunch(err: std.process.SpawnError, kind: WindowsCodexPathKind) bool {
+    return switch (err) {
+        error.FileNotFound, error.AccessDenied => true,
+        error.InvalidExe => kind != .exe,
+        else => false,
+    };
+}
+
 pub fn runCodexLogin(opts: types.LoginOptions, codex_home: []const u8) !void {
     var env_map = try app_runtime.currentEnviron().createMap(std.heap.page_allocator);
     defer env_map.deinit();
     try env_map.put("CODEX_HOME", codex_home);
+
+    if (builtin.os.tag == .windows) {
+        var candidates = try collectWindowsCodexPathsAlloc(std.heap.page_allocator);
+        defer deinitWindowsCodexPathList(std.heap.page_allocator, &candidates);
+
+        if (candidates.items.len == 0) {
+            writeCodexLoginLaunchFailureHint("FileNotFound") catch {};
+            return error.FileNotFound;
+        }
+
+        var last_retryable_error: ?std.process.SpawnError = null;
+        for (candidates.items) |*candidate| {
+            var launch = buildWindowsCodexLaunchAlloc(std.heap.page_allocator, candidate, opts) catch |err| {
+                writeCodexLoginLaunchFailureHint(@errorName(err)) catch {};
+                return err;
+            };
+
+            var child = std.process.spawn(app_runtime.io(), .{
+                .argv = launch.argv(),
+                .environ_map = &env_map,
+                .stdin = .inherit,
+                .stdout = .inherit,
+                .stderr = .inherit,
+            }) catch |err| {
+                launch.deinit(std.heap.page_allocator);
+                if (shouldRetryWindowsCodexLaunch(err, candidate.kind)) {
+                    last_retryable_error = err;
+                    continue;
+                }
+                writeCodexLoginLaunchFailureHint(@errorName(err)) catch {};
+                return err;
+            };
+            launch.deinit(std.heap.page_allocator);
+
+            const term = child.wait(app_runtime.io()) catch |err| {
+                writeCodexLoginLaunchFailureHint(@errorName(err)) catch {};
+                return err;
+            };
+            return ensureCodexLoginSucceeded(term);
+        }
+
+        if (last_retryable_error) |err| {
+            writeCodexLoginLaunchFailureHint(@errorName(err)) catch {};
+            return err;
+        }
+
+        writeCodexLoginLaunchFailureHint("FileNotFound") catch {};
+        return error.FileNotFound;
+    }
 
     var launch = buildCodexLaunchAlloc(std.heap.page_allocator, opts) catch |err| {
         writeCodexLoginLaunchFailureHint(@errorName(err)) catch {};

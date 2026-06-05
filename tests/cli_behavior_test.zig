@@ -808,6 +808,19 @@ test "Scenario: Given codex login client missing when rendering then detection h
     try std.testing.expect(std.mem.indexOf(u8, hint, "Ensure the Codex CLI is installed and available in your environment.") != null);
 }
 
+test "Scenario: Given PowerShell is missing for the codex ps1 launcher when rendering then the hint names PowerShell" {
+    const gpa = std.testing.allocator;
+    var aw: std.Io.Writer.Allocating = .init(gpa);
+    defer aw.deinit();
+
+    try cli.output.writeCodexLoginLaunchFailureHintTo(&aw.writer, "PowerShellNotFound", false);
+
+    const hint = aw.written();
+    try std.testing.expect(std.mem.indexOf(u8, hint, "the `codex.ps1` launcher requires PowerShell") != null);
+    try std.testing.expect(std.mem.indexOf(u8, hint, "Install PowerShell, or use a Codex CLI installation that provides `codex.exe` or `codex.cmd`, then retry your command.") != null);
+    try std.testing.expect(std.mem.indexOf(u8, hint, "the `codex` executable was not found in your PATH.") == null);
+}
+
 test "Scenario: Given login help when rendering then device auth usage is included" {
     const gpa = std.testing.allocator;
     var aw: std.Io.Writer.Allocating = .init(gpa);
@@ -853,6 +866,32 @@ test "Scenario: Given winget and npm Windows launchers when resolving then PATH 
     defer cmd_first.deinit(gpa);
     try std.testing.expectEqual(cli.login.WindowsCodexPathKind.cmd, cmd_first.kind);
     try std.testing.expect(std.mem.endsWith(u8, cmd_first.path, "codex.cmd"));
+}
+
+test "Scenario: Given both exe and cmd in one Windows directory when resolving then PATHEXT order decides which one wins" {
+    const gpa = std.testing.allocator;
+    var tmp = fs.tmpDir(.{});
+    defer tmp.cleanup();
+
+    try tmp.dir.makePath("mixed-bin");
+    try tmp.dir.writeFile(.{ .sub_path = "mixed-bin/codex.exe", .data = "" });
+    try tmp.dir.writeFile(.{ .sub_path = "mixed-bin/codex.cmd", .data = "@echo off\r\nexit /b 0\r\n" });
+    try tmp.dir.writeFile(.{ .sub_path = "mixed-bin/codex.ps1", .data = "exit 0\n" });
+
+    const root_dir = try tmp.dir.realpathAlloc(gpa, ".");
+    defer gpa.free(root_dir);
+    const mixed_dir = try std.fs.path.join(gpa, &[_][]const u8{ root_dir, "mixed-bin" });
+    defer gpa.free(mixed_dir);
+
+    var cmd_first = (try cli.login.resolveWindowsCodexPathEntriesWithPathExtAlloc(gpa, &[_][]const u8{mixed_dir}, ".CMD;.EXE")) orelse return error.TestUnexpectedResult;
+    defer cmd_first.deinit(gpa);
+    try std.testing.expectEqual(cli.login.WindowsCodexPathKind.cmd, cmd_first.kind);
+    try std.testing.expect(std.mem.endsWith(u8, cmd_first.path, "codex.cmd"));
+
+    var exe_first = (try cli.login.resolveWindowsCodexPathEntriesWithPathExtAlloc(gpa, &[_][]const u8{mixed_dir}, ".EXE;.CMD")) orelse return error.TestUnexpectedResult;
+    defer exe_first.deinit(gpa);
+    try std.testing.expectEqual(cli.login.WindowsCodexPathKind.exe, exe_first.kind);
+    try std.testing.expect(std.mem.endsWith(u8, exe_first.path, "codex.exe"));
 }
 
 test "Scenario: Given only PowerShell Windows launcher when resolving then ps1 is used after cmd is absent" {
