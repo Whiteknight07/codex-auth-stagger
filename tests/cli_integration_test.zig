@@ -1080,7 +1080,7 @@ test "Scenario: Given a winget-style Windows codex launcher when running login t
     try std.testing.expectEqualStrings("exe", std.mem.trim(u8, launcher_data, " \r\n"));
 }
 
-test "Scenario: Given an earlier PowerShell launcher and a later exe launcher when running login then PATH order still picks ps1" {
+test "Scenario: Given an earlier PowerShell launcher and a later exe launcher when running login then ps1 stays a global fallback" {
     if (builtin.os.tag != .windows) return error.SkipZigTest;
 
     const gpa = std.testing.allocator;
@@ -1140,7 +1140,7 @@ test "Scenario: Given an earlier PowerShell launcher and a later exe launcher wh
     defer gpa.free(launcher_path);
     const launcher_data = try fixtures.readFileAlloc(gpa, launcher_path);
     defer gpa.free(launcher_data);
-    try std.testing.expectEqualStrings("ps1", std.mem.trim(u8, launcher_data, " \r\n"));
+    try std.testing.expectEqualStrings("exe", std.mem.trim(u8, launcher_data, " \r\n"));
 }
 
 test "Scenario: Given refreshed active auth before login when running login then old account snapshot is synced first" {

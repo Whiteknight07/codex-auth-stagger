@@ -121,12 +121,13 @@ fn appendWindowsCodexPathCandidateIfAvailable(
 
 fn appendWindowsCodexPathEntryCandidatesAlloc(
     allocator: std.mem.Allocator,
-    candidates: *WindowsCodexPathList,
+    native_candidates: *WindowsCodexPathList,
+    ps1_candidates: *WindowsCodexPathList,
     entry: []const u8,
 ) !void {
-    try appendWindowsCodexPathCandidateIfAvailable(allocator, candidates, entry, .exe);
-    try appendWindowsCodexPathCandidateIfAvailable(allocator, candidates, entry, .cmd);
-    try appendWindowsCodexPathCandidateIfAvailable(allocator, candidates, entry, .ps1);
+    try appendWindowsCodexPathCandidateIfAvailable(allocator, native_candidates, entry, .exe);
+    try appendWindowsCodexPathCandidateIfAvailable(allocator, native_candidates, entry, .cmd);
+    try appendWindowsCodexPathCandidateIfAvailable(allocator, ps1_candidates, entry, .ps1);
 }
 
 fn deinitWindowsCodexPathList(allocator: std.mem.Allocator, candidates: *WindowsCodexPathList) void {
@@ -134,19 +135,32 @@ fn deinitWindowsCodexPathList(allocator: std.mem.Allocator, candidates: *Windows
     candidates.deinit(allocator);
 }
 
+fn appendWindowsCodexPathLists(
+    allocator: std.mem.Allocator,
+    dst: *WindowsCodexPathList,
+    src: *WindowsCodexPathList,
+) !void {
+    try dst.appendSlice(allocator, src.items);
+    src.clearRetainingCapacity();
+}
+
 fn collectWindowsCodexPathEntriesAlloc(
     allocator: std.mem.Allocator,
     entries: []const []const u8,
 ) !WindowsCodexPathList {
-    var candidates: WindowsCodexPathList = .empty;
-    errdefer deinitWindowsCodexPathList(allocator, &candidates);
+    var native_candidates: WindowsCodexPathList = .empty;
+    errdefer deinitWindowsCodexPathList(allocator, &native_candidates);
+    var ps1_candidates: WindowsCodexPathList = .empty;
+    errdefer deinitWindowsCodexPathList(allocator, &ps1_candidates);
 
     for (entries) |entry| {
         if (entry.len == 0) continue;
-        try appendWindowsCodexPathEntryCandidatesAlloc(allocator, &candidates, entry);
+        try appendWindowsCodexPathEntryCandidatesAlloc(allocator, &native_candidates, &ps1_candidates, entry);
     }
 
-    return candidates;
+    try appendWindowsCodexPathLists(allocator, &native_candidates, &ps1_candidates);
+    ps1_candidates.deinit(allocator);
+    return native_candidates;
 }
 
 fn accessPath(path: []const u8) bool {
@@ -162,27 +176,36 @@ fn accessPath(path: []const u8) bool {
 fn resolveWindowsCodexPathValueAlloc(
     allocator: std.mem.Allocator,
     path_value: []const u8,
-    candidates: *WindowsCodexPathList,
+    native_candidates: *WindowsCodexPathList,
+    ps1_candidates: *WindowsCodexPathList,
 ) !void {
     var path_it = std.mem.splitScalar(u8, path_value, std.fs.path.delimiter);
     while (path_it.next()) |entry| {
         if (entry.len == 0) continue;
-        try appendWindowsCodexPathEntryCandidatesAlloc(allocator, candidates, entry);
+        try appendWindowsCodexPathEntryCandidatesAlloc(allocator, native_candidates, ps1_candidates, entry);
     }
 }
 
 fn collectWindowsCodexPathsAlloc(allocator: std.mem.Allocator) !WindowsCodexPathList {
-    var candidates: WindowsCodexPathList = .empty;
-    errdefer deinitWindowsCodexPathList(allocator, &candidates);
+    var native_candidates: WindowsCodexPathList = .empty;
+    errdefer deinitWindowsCodexPathList(allocator, &native_candidates);
+    var ps1_candidates: WindowsCodexPathList = .empty;
+    errdefer deinitWindowsCodexPathList(allocator, &ps1_candidates);
 
     const path_value = http_env.getEnvVarOwned(allocator, "PATH") catch |err| switch (err) {
-        error.EnvironmentVariableNotFound => return candidates,
+        error.EnvironmentVariableNotFound => {
+            try appendWindowsCodexPathLists(allocator, &native_candidates, &ps1_candidates);
+            ps1_candidates.deinit(allocator);
+            return native_candidates;
+        },
         else => return err,
     };
     defer allocator.free(path_value);
 
-    try resolveWindowsCodexPathValueAlloc(allocator, path_value, &candidates);
-    return candidates;
+    try resolveWindowsCodexPathValueAlloc(allocator, path_value, &native_candidates, &ps1_candidates);
+    try appendWindowsCodexPathLists(allocator, &native_candidates, &ps1_candidates);
+    ps1_candidates.deinit(allocator);
+    return native_candidates;
 }
 
 fn resolveOptionalExecutableAlloc(
