@@ -143,6 +143,29 @@ test "writeAccountsTable keeps usage headers short" {
     try std.testing.expect(std.mem.indexOf(u8, output, "USAGE") == null);
 }
 
+test "writeAccountsTable shows reset credits column" {
+    const gpa = std.testing.allocator;
+    var reg = makeTestRegistry();
+    defer reg.deinit(gpa);
+
+    try appendTestAccount(gpa, &reg, "user-1::acc-1", "user@example.com", "", .plus);
+    reg.accounts.items[0].last_usage = .{
+        .primary = null,
+        .secondary = null,
+        .credits = null,
+        .reset_credits = 2,
+        .plan_type = .plus,
+    };
+
+    var buffer: [2048]u8 = undefined;
+    var writer: std.Io.Writer = .fixed(&buffer);
+    try writeAccountsTable(&writer, &reg, false);
+
+    const output = writer.buffered();
+    try std.testing.expect(std.mem.indexOf(u8, output, "RESET CREDITS") != null);
+    try std.testing.expect(std.mem.indexOf(u8, output, "Plus  2") != null);
+}
+
 test "writeAccountsTable shows usage override statuses for failed refreshes" {
     const gpa = std.testing.allocator;
     var reg = makeTestRegistry();
@@ -158,7 +181,7 @@ test "writeAccountsTable shows usage override statuses for failed refreshes" {
     try writeAccountsTableWithUsageOverrides(&writer, &reg, false, &usage_overrides);
 
     const output = writer.buffered();
-    try std.testing.expect(std.mem.count(u8, output, "403") >= 2);
+    try std.testing.expect(std.mem.count(u8, output, "403") >= 3);
 }
 
 test "writeAccountsTable highlights usage override rows in red when color is enabled" {

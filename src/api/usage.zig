@@ -261,6 +261,7 @@ pub fn parseUsageResponse(allocator: std.mem.Allocator, body: []const u8) !?regi
         .primary = null,
         .secondary = null,
         .credits = null,
+        .reset_credits = null,
         .plan_type = null,
     };
 
@@ -269,6 +270,9 @@ pub fn parseUsageResponse(allocator: std.mem.Allocator, body: []const u8) !?regi
     }
     if (root_obj.get("credits")) |credits| {
         snapshot.credits = try parseCredits(allocator, credits);
+    }
+    if (root_obj.get("rate_limit_reset_credits")) |reset_credits| {
+        snapshot.reset_credits = parseResetCredits(reset_credits);
     }
     if (root_obj.get("rate_limit")) |rate_limit| {
         switch (rate_limit) {
@@ -284,7 +288,7 @@ pub fn parseUsageResponse(allocator: std.mem.Allocator, body: []const u8) !?regi
         }
     }
 
-    if (snapshot.primary == null and snapshot.secondary == null) {
+    if (snapshot.primary == null and snapshot.secondary == null and snapshot.reset_credits == null) {
         if (snapshot.credits) |*credits| {
             if (credits.balance) |balance| allocator.free(balance);
         }
@@ -292,6 +296,17 @@ pub fn parseUsageResponse(allocator: std.mem.Allocator, body: []const u8) !?regi
     }
 
     return snapshot;
+}
+
+fn parseResetCredits(v: std.json.Value) ?i64 {
+    const obj = switch (v) {
+        .object => |o| o,
+        else => return null,
+    };
+    return switch (obj.get("available_count") orelse return null) {
+        .integer => |i| i,
+        else => null,
+    };
 }
 
 fn parseWindow(v: std.json.Value) ?registry.RateLimitWindow {
