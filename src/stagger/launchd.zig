@@ -90,12 +90,12 @@ fn runPlan(allocator: std.mem.Allocator, command: Command, uid: u32, plist: []co
     try runner(context, plan.argv);
 }
 fn ensurePrivateLog(path: []const u8) !void {
-    var file = try std.Io.Dir.cwd().createFile(runtime.io(), path, .{ .truncate = false, .permissions = .fromMode(0o600) });
+    var file = try std.Io.Dir.cwd().createFile(runtime.io(), path, .{ .truncate = false, .permissions = registry.private_file_permissions });
     file.close(runtime.io());
     try registry.hardenSensitiveFile(path);
 }
 fn writeAtomically(path: []const u8, bytes: []const u8) !void {
-    var atomic = try std.Io.Dir.cwd().createFileAtomic(runtime.io(), path, .{ .replace = true, .permissions = .fromMode(0o600) });
+    var atomic = try std.Io.Dir.cwd().createFileAtomic(runtime.io(), path, .{ .replace = true, .permissions = registry.private_file_permissions });
     defer atomic.deinit(runtime.io());
     var buffer: [4096]u8 = undefined;
     var writer = atomic.file.writer(runtime.io(), &buffer);

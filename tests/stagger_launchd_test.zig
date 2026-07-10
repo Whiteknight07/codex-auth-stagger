@@ -1,33 +1,58 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const launchd = @import("codex_auth").stagger.launchd;
 
+fn userHome() []const u8 {
+    return if (builtin.os.tag == .windows) "C:\\Users\\ada" else "/Users/ada";
+}
+
+fn schedulerPath(allocator: std.mem.Allocator, segments: []const []const u8) ![]u8 {
+    return std.fs.path.join(allocator, segments);
+}
+
 test "LaunchAgent paths use the supplied user home" {
-    const paths = try launchd.paths(std.testing.allocator, "/Users/ada");
+    const allocator = std.testing.allocator;
+    const home = userHome();
+    const paths = try launchd.paths(allocator, home);
     defer paths.deinit(std.testing.allocator);
 
-    try std.testing.expectEqualStrings("/Users/ada/Library/LaunchAgents/com.loongphy.codex-auth.stagger.plist", paths.plist);
-    try std.testing.expectEqualStrings("/Users/ada/Library/Logs/codex-auth-stagger.log", paths.stdout_log);
-    try std.testing.expectEqualStrings("/Users/ada/Library/Logs/codex-auth-stagger-error.log", paths.stderr_log);
+    const plist = try schedulerPath(allocator, &.{ home, "Library", "LaunchAgents", "com.loongphy.codex-auth.stagger.plist" });
+    defer allocator.free(plist);
+    const stdout_log = try schedulerPath(allocator, &.{ home, "Library", "Logs", "codex-auth-stagger.log" });
+    defer allocator.free(stdout_log);
+    const stderr_log = try schedulerPath(allocator, &.{ home, "Library", "Logs", "codex-auth-stagger-error.log" });
+    defer allocator.free(stderr_log);
+
+    try std.testing.expectEqualStrings(plist, paths.plist);
+    try std.testing.expectEqualStrings(stdout_log, paths.stdout_log);
+    try std.testing.expectEqualStrings(stderr_log, paths.stderr_log);
 }
 
 test "LaunchAgent plist renders escaped scheduler inputs" {
+    const allocator = std.testing.allocator;
+    const home = if (builtin.os.tag == .windows) "C:\\Users\\Ada & Bob" else "/Users/Ada & Bob";
+    const codex_home = try schedulerPath(allocator, &.{ home, ".codex<stagger>" });
+    defer allocator.free(codex_home);
     const rendered = try launchd.render(std.testing.allocator, .{
-        .home = "/Users/Ada & Bob",
-        .codex_home = "/Users/Ada & Bob/.codex<stagger>",
+        .home = home,
+        .codex_home = codex_home,
         .path = "/opt/codex&bin:/usr/bin",
-        .executable = "/Applications/Codex Auth & Tools/codex-auth",
+        .executable = if (builtin.os.tag == .windows) "C:\\Applications\\Codex Auth & Tools\\codex-auth.exe" else "/Applications/Codex Auth & Tools/codex-auth",
     });
     defer std.testing.allocator.free(rendered);
 
     try std.testing.expect(std.mem.indexOf(u8, rendered, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>") != null);
-    try std.testing.expect(std.mem.indexOf(u8, rendered, "<string>/Applications/Codex Auth &amp; Tools/codex-auth</string>") != null);
+    const expected_executable = if (builtin.os.tag == .windows) "<string>C:\\Applications\\Codex Auth &amp; Tools\\codex-auth.exe</string>" else "<string>/Applications/Codex Auth &amp; Tools/codex-auth</string>";
+    try std.testing.expect(std.mem.indexOf(u8, rendered, expected_executable) != null);
     try std.testing.expect(std.mem.indexOf(u8, rendered, "<string>stagger</string>\n    <string>tick</string>") != null);
-    try std.testing.expect(std.mem.indexOf(u8, rendered, "<string>/Users/Ada &amp; Bob/.codex&lt;stagger&gt;</string>") != null);
+    const expected_codex_home_element = if (builtin.os.tag == .windows) "<string>C:\\Users\\Ada &amp; Bob\\.codex&lt;stagger&gt;</string>" else "<string>/Users/Ada &amp; Bob/.codex&lt;stagger&gt;</string>";
+    try std.testing.expect(std.mem.indexOf(u8, rendered, expected_codex_home_element) != null);
     try std.testing.expect(std.mem.indexOf(u8, rendered, "<string>/opt/codex&amp;bin:/usr/bin</string>") != null);
     try std.testing.expect(std.mem.indexOf(u8, rendered, "<integer>300</integer>") != null);
     try std.testing.expect(std.mem.indexOf(u8, rendered, "<string>Background</string>") != null);
     try std.testing.expect(std.mem.indexOf(u8, rendered, "<integer>60</integer>") != null);
-    try std.testing.expect(std.mem.indexOf(u8, rendered, "<string>/Users/Ada &amp; Bob/Library/Logs/codex-auth-stagger.log</string>") != null);
+    const expected_stdout_log = if (builtin.os.tag == .windows) "<string>C:\\Users\\Ada &amp; Bob\\Library\\Logs\\codex-auth-stagger.log</string>" else "<string>/Users/Ada &amp; Bob/Library/Logs/codex-auth-stagger.log</string>";
+    try std.testing.expect(std.mem.indexOf(u8, rendered, expected_stdout_log) != null);
 }
 
 test "LaunchAgent renderer rejects a relative executable" {
