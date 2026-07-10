@@ -61,11 +61,26 @@ pub fn build(b: *std.Build) void {
         .root_module = fake_codex_module,
     });
     const install_fake_codex = b.addInstallArtifact(fake_codex_exe, .{});
+    const stagger_lock_holder_module = b.createModule(.{
+        .root_source_file = b.path("tests/stagger_lock_holder.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+        .imports = &.{
+            .{ .name = "codex_auth", .module = package_module },
+        },
+    });
+    const stagger_lock_holder_exe = b.addExecutable(.{
+        .name = "stagger-lock-holder",
+        .root_module = stagger_lock_holder_module,
+    });
+    const install_stagger_lock_holder = b.addInstallArtifact(stagger_lock_holder_exe, .{});
     const test_helpers_step = b.step("test-helpers", "Install test helper binaries");
     test_helpers_step.dependOn(b.getInstallStep());
     test_helpers_step.dependOn(&install_fake_curl.step);
     test_helpers_step.dependOn(&install_fake_curl_fail.step);
     test_helpers_step.dependOn(&install_fake_codex.step);
+    test_helpers_step.dependOn(&install_stagger_lock_holder.step);
 
     const run_cmd = b.addRunArtifact(exe);
     if (b.args) |args| {
@@ -88,6 +103,10 @@ pub fn build(b: *std.Build) void {
         "tests/registry_import_test.zig",
         "tests/registry_test.zig",
         "tests/session_test.zig",
+        "tests/stagger_test.zig",
+        "tests/stagger_storage_test.zig",
+        "tests/stagger_launchd_test.zig",
+        "tests/stagger_workflow_test.zig",
         "tests/time_relative_test.zig",
         "tests/table_layout_test.zig",
         "tests/tui_display_test.zig",
@@ -113,6 +132,8 @@ pub fn build(b: *std.Build) void {
         });
         const run_test = b.addRunArtifact(test_artifact);
         run_test.setEnvironmentVariable("CODEX_AUTH_CLI_INTEGRATION_PROJECT_ROOT", b.pathFromRoot("."));
+        run_test.setEnvironmentVariable("STAGGER_LOCK_HOLDER_EXE", b.getInstallPath(.bin, stagger_lock_holder_exe.out_filename));
+        run_test.step.dependOn(&install_stagger_lock_holder.step);
         test_step.dependOn(&run_test.step);
     }
 }

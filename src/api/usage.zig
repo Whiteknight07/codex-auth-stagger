@@ -342,23 +342,15 @@ fn parseCredits(allocator: std.mem.Allocator, v: std.json.Value) !?registry.Cred
         .object => |o| o,
         else => return null,
     };
-
-    const has_credits = if (obj.get("has_credits")) |value| switch (value) {
-        .bool => |b| b,
-        else => false,
-    } else false;
-    const unlimited = if (obj.get("unlimited")) |value| switch (value) {
-        .bool => |b| b,
-        else => false,
-    } else false;
+    const flags = registry.parseCreditFlags(v) orelse return null;
     const balance = if (obj.get("balance")) |value| switch (value) {
         .string => |s| if (s.len == 0) null else try allocator.dupe(u8, s),
         else => null,
     } else null;
 
     return .{
-        .has_credits = has_credits,
-        .unlimited = unlimited,
+        .has_credits = flags.has_credits,
+        .unlimited = flags.unlimited,
         .balance = balance,
     };
 }

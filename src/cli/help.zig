@@ -60,6 +60,7 @@ pub fn writeHelp(
     try writeCommandSummary(out, use_color, "config", "Manage configuration");
     try writeCommandDetail(out, use_color, "config live --interval <seconds>");
     try writeCommandSummary(out, use_color, "app", "Launch Codex App with CLI overrides");
+    try writeCommandSummary(out, use_color, "stagger", "Configure and run staggered usage windows");
 
     try out.writeAll("\n");
     if (use_color) try out.writeAll(style.ansi.cyan);
@@ -135,6 +136,7 @@ fn commandNameForTopic(topic: HelpTopic) []const u8 {
         .clean => "clean",
         .config => "config",
         .app => "app",
+        .stagger => "stagger",
     };
 }
 
@@ -151,19 +153,20 @@ fn commandDescriptionForTopic(topic: HelpTopic) []const u8 {
         .clean => "Delete backup and stale files under accounts/.",
         .config => "Manage live refresh configuration.",
         .app => "Launch Codex App with CLI overrides.",
+        .stagger => "Configure and run staggered usage windows.",
     };
 }
 
 fn commandHelpHasExamples(topic: HelpTopic) bool {
     return switch (topic) {
-        .import_auth, .export_auth, .switch_account, .remove_account, .alias, .config, .app => true,
+        .import_auth, .export_auth, .switch_account, .remove_account, .alias, .config, .app, .stagger => true,
         else => false,
     };
 }
 
 fn commandHelpHasOptions(topic: HelpTopic) bool {
     return switch (topic) {
-        .list, .login, .import_auth, .export_auth, .switch_account, .remove_account, .alias, .config, .app => true,
+        .list, .login, .import_auth, .export_auth, .switch_account, .remove_account, .alias, .config, .app, .stagger => true,
         else => false,
     };
 }
@@ -231,6 +234,14 @@ fn writeUsageLines(out: *std.Io.Writer, topic: HelpTopic) !void {
         .app => {
             try out.writeAll("  codex-auth app [--id <id>] [--codex-cli-path <path>] [--codex-home <path>] [--platform win|wsl|mac]\n");
         },
+        .stagger => {
+            try out.writeAll("  codex-auth stagger configure --primary <selector> --secondary <selector> [--spacing-minutes <1..299>] [--weekly-reserve-percent <0..99>]\n");
+            try out.writeAll("  codex-auth stagger tick [--dry-run] [--api|--skip-api]\n");
+            try out.writeAll("  codex-auth stagger status\n");
+            try out.writeAll("  codex-auth stagger enable\n");
+            try out.writeAll("  codex-auth stagger disable\n");
+            try out.writeAll("  codex-auth stagger uninstall\n");
+        },
     }
 }
 
@@ -247,6 +258,7 @@ pub fn helpCommandForTopic(topic: HelpTopic) []const u8 {
         .clean => "codex-auth clean --help",
         .config => "codex-auth config --help",
         .app => "codex-auth app --help",
+        .stagger => "codex-auth stagger --help",
     };
 }
 
@@ -312,6 +324,15 @@ fn writeOptionLines(out: *std.Io.Writer, topic: HelpTopic) !void {
             try out.writeAll("  --platform win|wsl|mac\n");
             try out.writeAll("                     Preselect the app platform. Defaults to the current app setting on Windows and mac on macOS.\n");
             try out.writeAll("  --std              Resolve the app package executable, then attach stdout/stderr to this terminal.\n");
+        },
+        .stagger => {
+            try out.writeAll("  --primary <selector>               Primary account selector.\n");
+            try out.writeAll("  --secondary <selector>             Secondary account selector.\n");
+            try out.writeAll("  --spacing-minutes <1..299>         Spacing between usage windows; defaults to 150 minutes.\n");
+            try out.writeAll("  --weekly-reserve-percent <0..99>   Weekly reserve; defaults to 5 percent.\n");
+            try out.writeAll("  --dry-run                          Show the tick plan without changing accounts.\n");
+            try out.writeAll("  --api                              Refresh usage from APIs before a tick.\n");
+            try out.writeAll("  --skip-api                         Use only cached registry usage for a tick.\n");
         },
         else => {},
     }
@@ -388,6 +409,11 @@ fn writeExampleLines(out: *std.Io.Writer, topic: HelpTopic) !void {
         .app => {
             try out.writeAll("  codex-auth app\n");
             try out.writeAll("  codex-auth app --platform win\n");
+        },
+        .stagger => {
+            try out.writeAll("  codex-auth stagger configure --primary personal --secondary work\n");
+            try out.writeAll("  codex-auth stagger tick --dry-run\n");
+            try out.writeAll("  codex-auth stagger status\n");
         },
     }
 }

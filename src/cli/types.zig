@@ -69,6 +69,22 @@ pub const AppOptions = struct {
     platform: ?AppPlatform = null,
     inherit_stdio: bool = false,
 };
+pub const StaggerConfigureOptions = struct {
+    primary_selector: []u8,
+    secondary_selector: []u8,
+    spacing_minutes: u16 = 150,
+    weekly_reserve_percent: u8 = 5,
+};
+pub const StaggerTickOptions = struct {
+    dry_run: bool = false,
+    api_mode: ApiMode = .default,
+};
+pub const StaggerAction = enum { status, enable, disable, uninstall };
+pub const StaggerOptions = union(enum) {
+    configure: StaggerConfigureOptions,
+    tick: StaggerTickOptions,
+    action: StaggerAction,
+};
 pub const HelpTopic = enum {
     top_level,
     list,
@@ -81,6 +97,7 @@ pub const HelpTopic = enum {
     clean,
     config,
     app,
+    stagger,
 };
 
 pub const Command = union(enum) {
@@ -94,6 +111,7 @@ pub const Command = union(enum) {
     clean: CleanOptions,
     config: ConfigOptions,
     app: AppOptions,
+    stagger: StaggerOptions,
     version: void,
     help: HelpTopic,
 };

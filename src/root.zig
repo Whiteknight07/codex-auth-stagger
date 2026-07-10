@@ -17,10 +17,12 @@ pub const core = struct {
     pub const compat_fs = @import("core/compat_fs.zig");
     pub const io_util = @import("core/io_util.zig");
     pub const runtime = @import("core/runtime.zig");
+    pub const stagger = @import("core/stagger.zig");
 };
 
 pub const registry = @import("registry/root.zig");
 pub const session = @import("session.zig");
+pub const stagger = @import("stagger/root.zig");
 
 pub const terminal = struct {
     pub const color = @import("terminal/color.zig");

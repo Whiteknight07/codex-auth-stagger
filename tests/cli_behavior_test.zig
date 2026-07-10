@@ -77,6 +77,132 @@ fn expectArgv(actual: []const []const u8, expected: []const []const u8) !void {
     }
 }
 
+test "Scenario: Given stagger configure selectors when parsing then defaults and owned selectors are preserved" {
+    const gpa = std.testing.allocator;
+    const args = [_][:0]const u8{ "codex-auth", "stagger", "configure", "--primary", "personal", "--secondary", "work" };
+    var result = try cli.commands.parseArgs(gpa, &args);
+    defer cli.commands.freeParseResult(gpa, &result);
+
+    switch (result) {
+        .command => |cmd| switch (cmd) {
+            .stagger => |opts| switch (opts) {
+                .configure => |configure_opts| {
+                    try std.testing.expectEqualStrings("personal", configure_opts.primary_selector);
+                    try std.testing.expectEqualStrings("work", configure_opts.secondary_selector);
+                    try std.testing.expectEqual(@as(u16, 150), configure_opts.spacing_minutes);
+                    try std.testing.expectEqual(@as(u8, 5), configure_opts.weekly_reserve_percent);
+                },
+                else => return error.TestExpectedEqual,
+            },
+            else => return error.TestExpectedEqual,
+        },
+        else => return error.TestExpectedEqual,
+    }
+}
+
+test "Scenario: Given stagger configure explicit settings when parsing then settings are preserved" {
+    const gpa = std.testing.allocator;
+    const args = [_][:0]const u8{ "codex-auth", "stagger", "configure", "--primary", "personal", "--secondary", "work", "--spacing-minutes", "299", "--weekly-reserve-percent", "99" };
+    var result = try cli.commands.parseArgs(gpa, &args);
+    defer cli.commands.freeParseResult(gpa, &result);
+
+    switch (result) {
+        .command => |cmd| switch (cmd) {
+            .stagger => |opts| switch (opts) {
+                .configure => |configure_opts| {
+                    try std.testing.expectEqual(@as(u16, 299), configure_opts.spacing_minutes);
+                    try std.testing.expectEqual(@as(u8, 99), configure_opts.weekly_reserve_percent);
+                },
+                else => return error.TestExpectedEqual,
+            },
+            else => return error.TestExpectedEqual,
+        },
+        else => return error.TestExpectedEqual,
+    }
+}
+
+test "Scenario: Given invalid stagger command arguments when parsing then usage errors are returned" {
+    const gpa = std.testing.allocator;
+    const cases = [_]struct { args: []const [:0]const u8, message: []const u8 }{
+        .{ .args = &.{ "codex-auth", "stagger", "configure", "--primary", "personal", "--primary", "work", "--secondary", "work" }, .message = "duplicate `--primary`" },
+        .{ .args = &.{ "codex-auth", "stagger", "configure", "--primary", "personal", "--secondary" }, .message = "requires a selector" },
+        .{ .args = &.{ "codex-auth", "stagger", "configure", "--primary", "personal", "--secondary", "work", "--spacing-minutes", "300" }, .message = "integer from 1 to 299" },
+        .{ .args = &.{ "codex-auth", "stagger", "configure", "--primary", "personal", "--secondary", "work", "--weekly-reserve-percent", "100" }, .message = "integer from 0 to 99" },
+        .{ .args = &.{ "codex-auth", "stagger", "tick", "--api", "--skip-api" }, .message = "cannot be combined" },
+        .{ .args = &.{ "codex-auth", "stagger", "status", "extra" }, .message = "unexpected argument `extra`" },
+    };
+
+    for (cases) |case| {
+        var result = try cli.commands.parseArgs(gpa, case.args);
+        defer cli.commands.freeParseResult(gpa, &result);
+        try expectUsageError(result, .stagger, case.message);
+    }
+}
+
+test "Scenario: Given stagger tick and simple actions when parsing then options and actions are preserved" {
+    const gpa = std.testing.allocator;
+    const tick_args = [_][:0]const u8{ "codex-auth", "stagger", "tick", "--dry-run", "--skip-api" };
+    var tick_result = try cli.commands.parseArgs(gpa, &tick_args);
+    defer cli.commands.freeParseResult(gpa, &tick_result);
+    switch (tick_result) {
+        .command => |cmd| switch (cmd) {
+            .stagger => |opts| switch (opts) {
+                .tick => |tick_opts| {
+                    try std.testing.expect(tick_opts.dry_run);
+                    try std.testing.expectEqual(cli.types.ApiMode.skip_api, tick_opts.api_mode);
+                },
+                else => return error.TestExpectedEqual,
+            },
+            else => return error.TestExpectedEqual,
+        },
+        else => return error.TestExpectedEqual,
+    }
+
+    inline for ([_]struct { name: [:0]const u8, action: cli.types.StaggerAction }{
+        .{ .name = "status", .action = .status },
+        .{ .name = "enable", .action = .enable },
+        .{ .name = "disable", .action = .disable },
+        .{ .name = "uninstall", .action = .uninstall },
+    }) |case| {
+        const args = [_][:0]const u8{ "codex-auth", "stagger", case.name };
+        var result = try cli.commands.parseArgs(gpa, &args);
+        defer cli.commands.freeParseResult(gpa, &result);
+        switch (result) {
+            .command => |cmd| switch (cmd) {
+                .stagger => |opts| switch (opts) {
+                    .action => |actual| try std.testing.expectEqual(case.action, actual),
+                    else => return error.TestExpectedEqual,
+                },
+                else => return error.TestExpectedEqual,
+            },
+            else => return error.TestExpectedEqual,
+        }
+    }
+}
+
+test "Scenario: Given stagger help when rendering then every command is documented in English" {
+    const gpa = std.testing.allocator;
+    const args = [_][:0]const u8{ "codex-auth", "help", "stagger" };
+    var result = try cli.commands.parseArgs(gpa, &args);
+    defer cli.commands.freeParseResult(gpa, &result);
+    try expectHelp(result, .stagger);
+
+    var aw: std.Io.Writer.Allocating = .init(gpa);
+    defer aw.deinit();
+
+    try cli.help.writeCommandHelp(&aw.writer, false, .stagger);
+
+    const help = aw.written();
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger configure --primary <selector> --secondary <selector> [--spacing-minutes <1..299>] [--weekly-reserve-percent <0..99>]") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger tick [--dry-run] [--api|--skip-api]") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger status") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger enable") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger disable") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger uninstall") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "150 minutes") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "5 percent") != null);
+}
+
 test "Scenario: Given app launch overrides when parsing then IDs and paths are preserved" {
     const gpa = std.testing.allocator;
     const args = [_][:0]const u8{

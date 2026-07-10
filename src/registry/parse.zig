@@ -115,14 +115,7 @@ pub fn parseCredits(allocator: std.mem.Allocator, v: std.json.Value) ?CreditsSna
         .object => |o| o,
         else => return null,
     };
-    const has_credits = if (obj.get("has_credits")) |hc| switch (hc) {
-        .bool => |b| b,
-        else => false,
-    } else false;
-    const unlimited = if (obj.get("unlimited")) |u| switch (u) {
-        .bool => |b| b,
-        else => false,
-    } else false;
+    const flags = common.parseCreditFlags(v) orelse return null;
     var balance: ?[]u8 = null;
     if (obj.get("balance")) |b| {
         switch (b) {
@@ -130,7 +123,7 @@ pub fn parseCredits(allocator: std.mem.Allocator, v: std.json.Value) ?CreditsSna
             else => {},
         }
     }
-    return CreditsSnapshot{ .has_credits = has_credits, .unlimited = unlimited, .balance = balance };
+    return CreditsSnapshot{ .has_credits = flags.has_credits, .unlimited = flags.unlimited, .balance = balance };
 }
 
 pub fn readInt(v: ?std.json.Value) ?i64 {

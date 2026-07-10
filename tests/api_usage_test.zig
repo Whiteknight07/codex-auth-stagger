@@ -105,6 +105,79 @@ test "parse usage api response keeps reset credits without windows" {
     try std.testing.expectEqual(@as(?i64, 4), snapshot.reset_credits);
 }
 
+test "parse usage api response rejects credits missing has_credits" {
+    const body =
+        \\{
+        \\  "rate_limit_reset_credits": { "available_count": 1 },
+        \\  "credits": { "unlimited": false, "balance": "1.00" }
+        \\}
+    ;
+
+    const snapshot = (try usage_api.parseUsageResponse(std.testing.allocator, body)) orelse return error.TestExpectedEqual;
+    defer registry.freeRateLimitSnapshot(std.testing.allocator, &snapshot);
+
+    try std.testing.expect(snapshot.credits == null);
+}
+
+test "parse usage api response rejects credits with malformed has_credits" {
+    const body =
+        \\{
+        \\  "rate_limit_reset_credits": { "available_count": 1 },
+        \\  "credits": { "has_credits": "false", "unlimited": false, "balance": "1.00" }
+        \\}
+    ;
+
+    const snapshot = (try usage_api.parseUsageResponse(std.testing.allocator, body)) orelse return error.TestExpectedEqual;
+    defer registry.freeRateLimitSnapshot(std.testing.allocator, &snapshot);
+
+    try std.testing.expect(snapshot.credits == null);
+}
+
+test "parse usage api response rejects credits missing unlimited" {
+    const body =
+        \\{
+        \\  "rate_limit_reset_credits": { "available_count": 1 },
+        \\  "credits": { "has_credits": false, "balance": "1.00" }
+        \\}
+    ;
+
+    const snapshot = (try usage_api.parseUsageResponse(std.testing.allocator, body)) orelse return error.TestExpectedEqual;
+    defer registry.freeRateLimitSnapshot(std.testing.allocator, &snapshot);
+
+    try std.testing.expect(snapshot.credits == null);
+}
+
+test "parse usage api response rejects credits with malformed unlimited" {
+    const body =
+        \\{
+        \\  "rate_limit_reset_credits": { "available_count": 1 },
+        \\  "credits": { "has_credits": false, "unlimited": 0, "balance": "1.00" }
+        \\}
+    ;
+
+    const snapshot = (try usage_api.parseUsageResponse(std.testing.allocator, body)) orelse return error.TestExpectedEqual;
+    defer registry.freeRateLimitSnapshot(std.testing.allocator, &snapshot);
+
+    try std.testing.expect(snapshot.credits == null);
+}
+
+test "parse usage api response keeps valid unlimited credits" {
+    const body =
+        \\{
+        \\  "rate_limit_reset_credits": { "available_count": 1 },
+        \\  "credits": { "has_credits": true, "unlimited": true, "balance": "unlimited" }
+        \\}
+    ;
+
+    const snapshot = (try usage_api.parseUsageResponse(std.testing.allocator, body)) orelse return error.TestExpectedEqual;
+    defer registry.freeRateLimitSnapshot(std.testing.allocator, &snapshot);
+
+    try std.testing.expect(snapshot.credits != null);
+    try std.testing.expect(snapshot.credits.?.has_credits);
+    try std.testing.expect(snapshot.credits.?.unlimited);
+    try std.testing.expectEqualStrings("unlimited", snapshot.credits.?.balance.?);
+}
+
 test "parse usage api response maps prolite plan" {
     const gpa = std.testing.allocator;
     const body =

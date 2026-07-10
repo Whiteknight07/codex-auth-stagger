@@ -64,6 +64,27 @@ pub const CreditsSnapshot = struct {
     balance: ?[]u8,
 };
 
+pub const CreditFlags = struct {
+    has_credits: bool,
+    unlimited: bool,
+};
+
+pub fn parseCreditFlags(value: std.json.Value) ?CreditFlags {
+    const object = switch (value) {
+        .object => |item| item,
+        else => return null,
+    };
+    const has_credits = switch (object.get("has_credits") orelse return null) {
+        .bool => |item| item,
+        else => return null,
+    };
+    const unlimited = switch (object.get("unlimited") orelse return null) {
+        .bool => |item| item,
+        else => return null,
+    };
+    return .{ .has_credits = has_credits, .unlimited = unlimited };
+}
+
 pub const RateLimitSnapshot = struct {
     primary: ?RateLimitWindow,
     secondary: ?RateLimitWindow,

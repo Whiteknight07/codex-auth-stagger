@@ -71,8 +71,8 @@ const UsageWindowJson = struct {
 };
 
 const UsageCreditsJson = struct {
-    has_credits: bool = false,
-    unlimited: bool = false,
+    has_credits: ?bool = null,
+    unlimited: ?bool = null,
     balance: ?[]const u8 = null,
 };
 
@@ -458,14 +458,16 @@ fn parseWindow(parsed: UsageWindowJson) ?registry.RateLimitWindow {
     };
 }
 
-fn parseCredits(allocator: std.mem.Allocator, parsed: UsageCreditsJson) registry.CreditsSnapshot {
+fn parseCredits(allocator: std.mem.Allocator, parsed: UsageCreditsJson) ?registry.CreditsSnapshot {
+    const has_credits = parsed.has_credits orelse return null;
+    const unlimited = parsed.unlimited orelse return null;
     var balance: ?[]u8 = null;
     if (parsed.balance) |b| {
         balance = allocator.dupe(u8, b) catch null;
     }
     return .{
-        .has_credits = parsed.has_credits,
-        .unlimited = parsed.unlimited,
+        .has_credits = has_credits,
+        .unlimited = unlimited,
         .balance = balance,
     };
 }

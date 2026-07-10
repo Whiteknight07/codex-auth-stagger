@@ -412,6 +412,25 @@ test "resolveDisplayPlan prefers a usage snapshot plan over the stored auth plan
     try std.testing.expectEqual(registry.PlanType.team, registry.resolveDisplayPlan(&reg.accounts.items[0]).?);
 }
 
+test "registry load keeps incomplete credit metadata unknown" {
+    const allocator = std.testing.allocator;
+    var tmp = fs.tmpDir(.{});
+    defer tmp.cleanup();
+    const codex_home = try tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(codex_home);
+    try tmp.dir.makePath("accounts");
+    try tmp.dir.writeFile(.{
+        .sub_path = "accounts/registry.json",
+        .data =
+        \\{"schema_version":4,"active_account_key":null,"previous_active_account_key":null,"active_account_activated_at_ms":null,"interval_seconds":60,"accounts":[{"account_key":"user::account","chatgpt_account_id":"account","chatgpt_user_id":"user","email":"safe@example.test","alias":"safe","account_name":null,"plan":"plus","auth_mode":"chatgpt","created_at":1,"last_used_at":null,"last_usage_at":100,"last_usage":{"primary":{"used_percent":10,"window_minutes":300,"resets_at":200},"secondary":{"used_percent":10,"window_minutes":10080,"resets_at":20000},"credits":{"has_credits":false},"reset_credits":null,"plan_type":"plus"},"last_local_rollout":null}]}
+        ,
+    });
+
+    var loaded = try registry.loadRegistry(allocator, codex_home);
+    defer loaded.deinit(allocator);
+    try std.testing.expect(loaded.accounts.items[0].last_usage.?.credits == null);
+}
+
 test "registry load defaults missing account_name field to null" {
     const gpa = std.testing.allocator;
     var tmp = fs.tmpDir(.{});

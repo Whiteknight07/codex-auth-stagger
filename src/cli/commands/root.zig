@@ -12,6 +12,7 @@ const list = @import("list.zig");
 const login = @import("login.zig");
 const remove = @import("remove.zig");
 const switch_account = @import("switch.zig");
+const stagger = @import("stagger.zig");
 
 pub fn parseArgs(allocator: std.mem.Allocator, args: []const [:0]const u8) !types.ParseResult {
     if (args.len < 2) return .{ .command = .{ .help = .top_level } };
@@ -58,6 +59,7 @@ pub fn parseArgs(allocator: std.mem.Allocator, args: []const [:0]const u8) !type
     if (std.mem.eql(u8, cmd, "clean")) return clean.parse(allocator, args[2..]);
     if (std.mem.eql(u8, cmd, "config")) return config.parse(allocator, args[2..]);
     if (std.mem.eql(u8, cmd, "app")) return app.parse(allocator, args[2..]);
+    if (std.mem.eql(u8, cmd, "stagger")) return stagger.parse(allocator, args[2..]);
 
     return common.usageErrorResult(allocator, .top_level, "unknown command `{s}`.", .{cmd});
 }
@@ -91,6 +93,13 @@ fn freeCommand(allocator: std.mem.Allocator, cmd: *types.Command) void {
             },
             .clear => |clear_opts| allocator.free(clear_opts.selector),
         },
+        .stagger => |opts| switch (opts) {
+            .configure => |configure_opts| {
+                allocator.free(configure_opts.primary_selector);
+                allocator.free(configure_opts.secondary_selector);
+            },
+            else => {},
+        },
         else => {},
     }
     cmd.* = undefined;
@@ -120,5 +129,6 @@ fn helpTopicForName(name: []const u8) ?types.HelpTopic {
     if (std.mem.eql(u8, name, "clean")) return .clean;
     if (std.mem.eql(u8, name, "config")) return .config;
     if (std.mem.eql(u8, name, "app")) return .app;
+    if (std.mem.eql(u8, name, "stagger")) return .stagger;
     return null;
 }

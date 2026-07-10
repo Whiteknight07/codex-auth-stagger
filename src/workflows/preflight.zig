@@ -43,7 +43,23 @@ pub fn isHandledCliError(err: anyerror) bool {
         err == error.WindowsAppLaunchRequiresWindows or
         err == error.WindowsAppPlatformRequiresWindows or
         err == error.MacAppPlatformRequiresMacOS or
-        err == error.WindowsPassthroughArgsUnsupported;
+        err == error.WindowsPassthroughArgsUnsupported or
+        err == error.StaggerBusy or
+        err == error.StaggerNotConfigured or
+        err == error.StaggerSelectorNotFound or
+        err == error.StaggerSelectorAmbiguous or
+        err == error.StaggerSelectorsMustBeDistinct or
+        err == error.StaggerAccountMissing or
+        err == error.StaggerUsageMalformed or
+        err == error.StaggerUsageRefreshFailed or
+        err == error.StaggerActivationFailed or
+        err == error.StaggerActivationUnverified or
+        err == error.StaggerAnchorTimedOut or
+        err == error.StaggerAnchorFailed or
+        err == error.StaggerLaunchdRequiresMacOS or
+        err == error.StaggerLaunchdTimedOut or
+        err == error.StaggerLaunchdFailed or
+        err == error.InvalidSchedulerData;
 }
 
 pub fn ensureLiveTty(target: LiveTtyTarget) !void {

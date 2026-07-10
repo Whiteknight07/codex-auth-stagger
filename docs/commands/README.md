@@ -16,6 +16,7 @@ This directory documents command behavior by command. Use `codex-auth <command> 
 | `clean` | [docs/commands/clean.md](./clean.md) |
 | `config` | [docs/commands/config.md](./config.md) |
 | `app` | [docs/commands/app.md](./app.md) |
+| `stagger` | [docs/commands/stagger.md](./stagger.md) |
 
 ## Shared Behavior
 
