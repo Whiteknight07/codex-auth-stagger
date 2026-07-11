@@ -14,7 +14,7 @@ const anchor_mod = @import("../stagger/anchor.zig");
 const safety_margin_seconds: i64 = 60;
 const staleness_limit_seconds: i64 = 5 * 60;
 const anchor_timeout_ms: u64 = 15_000;
-const anchor_output_limit_bytes: usize = 1024;
+const anchor_output_limit_bytes: usize = 64 * 1024;
 
 pub fn handle(allocator: std.mem.Allocator, codex_home: []const u8, options: cli.types.StaggerOptions) !void {
     handleInner(allocator, codex_home, options) catch |err| {
