@@ -4,6 +4,7 @@ pub const Policy = struct {
     spacing_seconds: i64,
     safety_margin_seconds: i64,
     staleness_limit_seconds: i64,
+    // Retained in persisted scheduler data for compatibility; eligibility is fixed at 5%.
     weekly_reserve_percent: f64,
 };
 
@@ -23,6 +24,7 @@ pub const Account = struct {
     usage: ?UsageSnapshot,
     due_at: ?i64,
     last_anchor_at: ?i64,
+    is_active: bool = false,
 };
 
 pub const PauseReason = enum {
@@ -32,13 +34,12 @@ pub const PauseReason = enum {
     usage_missing,
     usage_stale,
     usage_malformed,
-    weekly_reserve,
+    usage_below_threshold,
 };
 
 pub const WaitReason = enum {
     scheduled,
     spacing,
-    five_hour_reset,
 };
 
 pub const AnchorDecision = struct {
@@ -84,6 +85,8 @@ const GlobalSpacing = union(enum) {
     invalid,
 };
 
+const minimum_remaining_percent = 5.0;
+
 /// Produces one deterministic action from an immutable scheduling snapshot.
 /// The caller owns all side effects. It may persist `next_due_at` as a
 /// fail-closed duplicate guard before attempting an anchor.
@@ -106,6 +109,7 @@ pub fn plan(accounts: []const Account, now: i64, policy: Policy) Decision {
     };
     const global_spacing = globalSpacing(accounts, now, policy.spacing_seconds);
     if (global_spacing == .invalid) return pause(null, .account_malformed);
+    const active_account_ineligible = activeAccountIsIneligible(accounts, now, policy);
 
     var best_anchor: ?Candidate = null;
     var best_wait: ?WaitDecision = null;
@@ -126,52 +130,24 @@ pub fn plan(accounts: []const Account, now: i64, policy: Policy) Decision {
             }
         }
 
-        const snapshot = account.usage orelse {
-            considerPause(&best_pause, candidate, .usage_missing);
-            continue;
-        };
-        switch (validateUsage(snapshot, now, policy)) {
-            .valid => {},
+        switch (usageEligibility(account.usage, now, policy)) {
+            .eligible => {},
             .paused => |reason| {
                 considerPause(&best_pause, candidate, reason);
                 continue;
             },
         }
 
-        if (snapshot.five_hour.used_percent < 100.0 and !hasRequiredHeadroom(snapshot.five_hour.used_percent, 1.0)) {
-            considerPause(&best_pause, candidate, .usage_malformed);
-            continue;
-        }
-
-        const weekly_required_remaining_percent = @max(1.0, policy.weekly_reserve_percent);
-        if (!hasRequiredHeadroom(snapshot.weekly.used_percent, weekly_required_remaining_percent)) {
-            considerPause(&best_pause, candidate, .weekly_reserve);
-            continue;
-        }
-
-        var until = due_at;
+        var until = if (active_account_ineligible and !account.is_active) now else due_at;
         var wait_reason: WaitReason = .scheduled;
 
-        switch (global_spacing) {
-            .until => |spacing_until| if (spacing_until > until) {
-                until = spacing_until;
-                wait_reason = .spacing;
-            },
-            .no_anchors, .invalid => {},
-        }
-
-        if (snapshot.five_hour.used_percent >= 100.0) {
-            const reset_until = std.math.add(i64, snapshot.five_hour.resets_at, policy.safety_margin_seconds) catch {
-                considerPause(&best_pause, candidate, .usage_malformed);
-                continue;
-            };
-            if (reset_until <= now) {
-                considerPause(&best_pause, candidate, .usage_malformed);
-                continue;
-            }
-            if (reset_until > until) {
-                until = reset_until;
-                wait_reason = .five_hour_reset;
+        if (!active_account_ineligible) {
+            switch (global_spacing) {
+                .until => |spacing_until| if (spacing_until > until) {
+                    until = spacing_until;
+                    wait_reason = .spacing;
+                },
+                .no_anchors, .invalid => {},
             }
         }
 
@@ -205,10 +181,7 @@ pub fn plan(accounts: []const Account, now: i64, policy: Policy) Decision {
 pub fn validPolicy(policy: Policy) bool {
     return policy.spacing_seconds > 0 and
         policy.safety_margin_seconds >= 0 and
-        policy.staleness_limit_seconds > 0 and
-        std.math.isFinite(policy.weekly_reserve_percent) and
-        policy.weekly_reserve_percent >= 0.0 and
-        policy.weekly_reserve_percent < 100.0;
+        policy.staleness_limit_seconds > 0;
 }
 
 fn validateUsage(snapshot: UsageSnapshot, now: i64, policy: Policy) Validation {
@@ -234,8 +207,38 @@ fn validPercent(value: f64) bool {
     return std.math.isFinite(value) and value >= 0.0 and value <= 100.0;
 }
 
-fn hasRequiredHeadroom(used_percent: f64, required_remaining_percent: f64) bool {
-    return used_percent < 100.0 - required_remaining_percent;
+fn hasMinimumHeadroom(used_percent: f64) bool {
+    return used_percent <= 100.0 - minimum_remaining_percent;
+}
+
+const UsageEligibility = union(enum) {
+    eligible: UsageSnapshot,
+    paused: PauseReason,
+};
+
+fn usageEligibility(maybe_snapshot: ?UsageSnapshot, now: i64, policy: Policy) UsageEligibility {
+    const snapshot = maybe_snapshot orelse return .{ .paused = .usage_missing };
+    switch (validateUsage(snapshot, now, policy)) {
+        .valid => {},
+        .paused => |reason| return .{ .paused = reason },
+    }
+    if (!hasMinimumHeadroom(snapshot.five_hour.used_percent) or
+        !hasMinimumHeadroom(snapshot.weekly.used_percent))
+    {
+        return .{ .paused = .usage_below_threshold };
+    }
+    return .{ .eligible = snapshot };
+}
+
+fn activeAccountIsIneligible(accounts: []const Account, now: i64, policy: Policy) bool {
+    for (accounts) |account| {
+        if (!account.is_active) continue;
+        return switch (usageEligibility(account.usage, now, policy)) {
+            .eligible => false,
+            .paused => true,
+        };
+    }
+    return false;
 }
 
 fn hasDuplicateKey(accounts: []const Account, key: []const u8, index: usize) bool {

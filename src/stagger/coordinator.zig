@@ -75,7 +75,7 @@ pub fn tick(allocator: std.mem.Allocator, codex_home: []const u8, options: Optio
             defer current.deinit(allocator);
             const active_key = current.record_key orelse return error.StaggerActivationUnverified;
             if (!std.mem.eql(u8, active_key, decision.account_key)) return error.StaggerActivationUnverified;
-            try anchor.run(runtime.context, runtime.run_anchor);
+            try anchor.run(allocator, codex_home, runtime.context, runtime.run_anchor);
             return .anchored;
         },
         .wait => return .waiting,
@@ -107,7 +107,13 @@ fn plannerAccounts(allocator: std.mem.Allocator, persisted: *const storage.Sched
     for (persisted.config.account_keys, 0..) |key, index| {
         const record_index = findAccountIndex(reg, key) orelse return error.StaggerAccountMissing;
         const record = &reg.accounts.items[record_index];
-        result[index] = .{ .key = key, .usage = try mapUsage(record, fresh_usage_observed_at), .due_at = persisted.state.accounts[index].due_at, .last_anchor_at = persisted.state.accounts[index].last_anchor_at };
+        result[index] = .{
+            .key = key,
+            .usage = mapUsage(record, fresh_usage_observed_at),
+            .due_at = persisted.state.accounts[index].due_at,
+            .last_anchor_at = persisted.state.accounts[index].last_anchor_at,
+            .is_active = if (reg.active_account_key) |active_key| std.mem.eql(u8, key, active_key) else false,
+        };
     }
     return result;
 }
@@ -123,12 +129,14 @@ fn stateIndex(state: *const storage.State, key: []const u8) ?usize {
     for (state.accounts, 0..) |account, index| if (std.mem.eql(u8, account.account_key, key)) return index;
     return null;
 }
-fn mapUsage(record: *const registry.AccountRecord, fresh_usage_observed_at: ?i64) !?core.UsageSnapshot {
+fn mapUsage(record: *const registry.AccountRecord, fresh_usage_observed_at: ?i64) ?core.UsageSnapshot {
     const snapshot = record.last_usage orelse return null;
-    const observed_at = fresh_usage_observed_at orelse record.last_usage_at orelse return error.StaggerUsageMalformed;
-    const five = exactWindow(snapshot, five_hours_minutes) orelse return error.StaggerUsageMalformed;
-    const week = exactWindow(snapshot, weekly_minutes) orelse return error.StaggerUsageMalformed;
-    return .{ .observed_at = observed_at, .five_hour = .{ .used_percent = five.used_percent, .resets_at = five.resets_at orelse return error.StaggerUsageMalformed }, .weekly = .{ .used_percent = week.used_percent, .resets_at = week.resets_at orelse return error.StaggerUsageMalformed } };
+    const observed_at = fresh_usage_observed_at orelse record.last_usage_at orelse return null;
+    const five = exactWindow(snapshot, five_hours_minutes) orelse return null;
+    const week = exactWindow(snapshot, weekly_minutes) orelse return null;
+    const five_resets_at = five.resets_at orelse return null;
+    const week_resets_at = week.resets_at orelse return null;
+    return .{ .observed_at = observed_at, .five_hour = .{ .used_percent = five.used_percent, .resets_at = five_resets_at }, .weekly = .{ .used_percent = week.used_percent, .resets_at = week_resets_at } };
 }
 fn exactWindow(snapshot: registry.RateLimitSnapshot, minutes: i64) ?registry.RateLimitWindow {
     var found: ?registry.RateLimitWindow = null;

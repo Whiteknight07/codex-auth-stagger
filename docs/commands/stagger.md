@@ -13,7 +13,7 @@ codex-auth-stagger stagger disable
 codex-auth-stagger stagger uninstall
 ```
 
-`configure` requires two distinct selectors. Selectors use the same local matching rules as `switch`; an unmatched or ambiguous selector is rejected. The default spacing is 150 minutes and the default weekly reserve is 5 percent.
+`configure` requires two distinct selectors. Selectors use the same local matching rules as `switch`; an unmatched or ambiguous selector is rejected. The default spacing is 150 minutes. `--weekly-reserve-percent` remains accepted for configuration compatibility, but no longer affects scheduling.
 
 ## Recommended Setup
 
@@ -37,7 +37,9 @@ By default, a tick uses the configured API-refresh mode. `--api` explicitly refr
 
 `--skip-api` makes the tick use only cached usage stored in the registry. It does not scan local session files. Cached data can be stale or incomplete, so this mode does not relax any safety checks.
 
-The scheduler fails closed: it pauses rather than authorizing an anchor when the usage data is missing, stale, malformed, ambiguous, or at a safety boundary. An account must have strictly more than 1% remaining in both the exact five-hour and weekly windows. It also preserves the configured weekly reserve (5% by default); when that is stricter, the reserve is used. Paid-credit status and balance never add capacity or affect account selection.
+The scheduler fails closed: it pauses rather than authorizing an anchor when the usage data is missing, stale, malformed, ambiguous, or below the safety threshold. An account must have at least 5% remaining in both the exact five-hour and weekly windows; a fully used five-hour window is not scheduled for its reset. Paid-credit status and balance never add capacity or affect account selection. If the active configured account is ineligible, another eligible configured account may anchor immediately without waiting for normal spacing or its own due time.
+
+Anchors run `codex exec` from a fresh private empty directory inside `CODEX_HOME/accounts`, removed after the command completes, with read-only sandboxing, approval disabled, user config and rules ignored, and `--ephemeral`. Ephemeral anchors do not persist a Codex session, so there is no archive step to run.
 
 Use `--dry-run` before enabling automation or after changing configuration. It shows the planning outcome without changing the active account or writing an anchor.
 

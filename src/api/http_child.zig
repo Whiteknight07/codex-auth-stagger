@@ -25,6 +25,17 @@ pub fn runChildCaptureWithOutputLimit(
     return runChildCaptureWithInputAndOutputLimit(allocator, argv, null, timeout_ms, env_map, output_limit_bytes);
 }
 
+pub fn runChildCaptureWithCwdAndOutputLimit(
+    allocator: std.mem.Allocator,
+    argv: []const []const u8,
+    cwd: []const u8,
+    timeout_ms: u64,
+    env_map: ?*const std.process.Environ.Map,
+    output_limit_bytes: usize,
+) !ChildCaptureResult {
+    return runChildCaptureWithInputCwdAndOutputLimit(allocator, argv, null, cwd, timeout_ms, env_map, output_limit_bytes);
+}
+
 pub fn runChildCaptureWithInputAndOutputLimit(
     allocator: std.mem.Allocator,
     argv: []const []const u8,
@@ -33,8 +44,21 @@ pub fn runChildCaptureWithInputAndOutputLimit(
     env_map: ?*const std.process.Environ.Map,
     output_limit_bytes: usize,
 ) !ChildCaptureResult {
+    return runChildCaptureWithInputCwdAndOutputLimit(allocator, argv, stdin_bytes, null, timeout_ms, env_map, output_limit_bytes);
+}
+
+fn runChildCaptureWithInputCwdAndOutputLimit(
+    allocator: std.mem.Allocator,
+    argv: []const []const u8,
+    stdin_bytes: ?[]const u8,
+    cwd: ?[]const u8,
+    timeout_ms: u64,
+    env_map: ?*const std.process.Environ.Map,
+    output_limit_bytes: usize,
+) !ChildCaptureResult {
     var child = std.process.spawn(app_runtime.io(), .{
         .argv = argv,
+        .cwd = if (cwd) |path| .{ .path = path } else null,
         .environ_map = env_map,
         .stdin = if (stdin_bytes != null) .pipe else .ignore,
         .stdout = .pipe,

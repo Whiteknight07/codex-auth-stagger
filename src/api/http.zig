@@ -28,6 +28,7 @@ pub const resolveCurlExecutableAlloc = curl.resolveCurlExecutableAlloc;
 
 pub const runChildCapture = child.runChildCapture;
 pub const runChildCaptureWithOutputLimit = child.runChildCaptureWithOutputLimit;
+pub const runChildCaptureWithCwdAndOutputLimit = child.runChildCaptureWithCwdAndOutputLimit;
 pub const runChildCaptureWithInputAndOutputLimit = child.runChildCaptureWithInputAndOutputLimit;
 pub const computeBatchChildTimeoutMs = child.computeBatchChildTimeoutMs;
 pub const computeBatchChildOutputLimitBytes = child.computeBatchChildOutputLimitBytes;

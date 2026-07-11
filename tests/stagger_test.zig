@@ -136,7 +136,7 @@ test "rotation interval overflow pauses safely" {
     try std.testing.expectEqual(stagger.PauseReason.invalid_policy, decision.paused.reason);
 }
 
-test "future anchor timestamps and a full weekly reserve pause safely" {
+test "future anchor timestamps pause safely and legacy weekly reserves do not affect policy validity" {
     var future_anchor = account("A", now, usage(now, 10, 10));
     future_anchor.last_anchor_at = now + 1;
     const future_accounts = [_]stagger.Account{
@@ -148,17 +148,16 @@ test "future anchor timestamps and a full weekly reserve pause safely" {
         stagger.plan(future_accounts[0..], now, policy()).paused.reason,
     );
 
-    var full_reserve = policy();
-    full_reserve.weekly_reserve_percent = 100;
+    var legacy_reserve = policy();
+    legacy_reserve.weekly_reserve_percent = 100;
     const accounts = [_]stagger.Account{account("A", now, usage(now, 10, 10))};
-    try std.testing.expectEqual(
-        stagger.PauseReason.invalid_policy,
-        stagger.plan(accounts[0..], now, full_reserve).paused.reason,
-    );
+    try std.testing.expectEqualStrings("A", stagger.plan(accounts[0..], now, legacy_reserve).anchor.account_key);
 }
 
 test "missing usage fails closed" {
-    const accounts = [_]stagger.Account{account("alpha", now, null)};
+    var active = account("alpha", now, null);
+    active.is_active = true;
+    const accounts = [_]stagger.Account{active};
 
     const decision = stagger.plan(accounts[0..], now, policy());
     try std.testing.expectEqual(stagger.PauseReason.usage_missing, decision.paused.reason);
@@ -209,33 +208,53 @@ test "reset timestamps at the observation time are malformed" {
     try std.testing.expectEqual(stagger.PauseReason.usage_malformed, decision.paused.reason);
 }
 
-test "the exact one percent remaining boundary pauses both windows" {
+test "the exact five percent remaining boundary is eligible for both windows" {
     const accounts = [_]stagger.Account{
-        account("five-hour", now, usage(now, 99, 20)),
-        account("weekly", now, usage(now, 20, 99)),
+        account("five-hour", now, usage(now, 95, 20)),
+        account("weekly", now, usage(now, 20, 95)),
     };
 
-    var one_percent_only = policy();
-    one_percent_only.weekly_reserve_percent = 0;
-    try std.testing.expectEqual(stagger.PauseReason.usage_malformed, stagger.plan(accounts[0..1], now, one_percent_only).paused.reason);
-    try std.testing.expectEqual(stagger.PauseReason.weekly_reserve, stagger.plan(accounts[1..], now, one_percent_only).paused.reason);
+    try std.testing.expectEqualStrings("five-hour", stagger.plan(accounts[0..1], now, policy()).anchor.account_key);
+    try std.testing.expectEqualStrings("weekly", stagger.plan(accounts[1..], now, policy()).anchor.account_key);
 }
 
-test "exhausted five hour window waits through reset safety margin" {
+test "a fully used five hour window is ineligible rather than waiting for reset" {
     var snapshot = usage(now, 100, 20);
     snapshot.five_hour.resets_at = now + 120;
     const accounts = [_]stagger.Account{account("alpha", now, snapshot)};
 
     const decision = stagger.plan(accounts[0..], now, policy());
-    try std.testing.expectEqual(now + 120 + policy().safety_margin_seconds, decision.wait.until);
-    try std.testing.expectEqual(stagger.WaitReason.five_hour_reset, decision.wait.reason);
+    try std.testing.expectEqual(stagger.PauseReason.usage_below_threshold, decision.paused.reason);
 }
 
-test "weekly reserve is stricter than the one percent minimum" {
-    const accounts = [_]stagger.Account{account("alpha", now, usage(now, 20, 95))};
+test "less than five percent remaining pauses either exact window" {
+    const five_hour_accounts = [_]stagger.Account{account("five-hour", now, usage(now, 96, 20))};
+    const weekly_accounts = [_]stagger.Account{account("weekly", now, usage(now, 20, 96))};
 
-    const decision = stagger.plan(accounts[0..], now, policy());
-    try std.testing.expectEqual(stagger.PauseReason.weekly_reserve, decision.paused.reason);
+    try std.testing.expectEqual(stagger.PauseReason.usage_below_threshold, stagger.plan(five_hour_accounts[0..], now, policy()).paused.reason);
+    try std.testing.expectEqual(stagger.PauseReason.usage_below_threshold, stagger.plan(weekly_accounts[0..], now, policy()).paused.reason);
+}
+
+test "ineligible active usage immediately fails over despite a future peer due time" {
+    const active_usage = [_]?stagger.UsageSnapshot{
+        null,
+        usage(now, 96, 20),
+        usage(now - policy().staleness_limit_seconds - 1, 20, 20),
+        usage(now, 101, 20),
+    };
+
+    for (active_usage) |maybe_usage| {
+        var active = account("active", now, maybe_usage);
+        active.last_anchor_at = now;
+        active.is_active = true;
+        const accounts = [_]stagger.Account{
+            active,
+            account("failover", now + 10_000, usage(now, 20, 20)),
+        };
+
+        const decision = stagger.plan(accounts[0..], now, policy());
+        try std.testing.expectEqualStrings("failover", decision.anchor.account_key);
+    }
 }
 
 test "paused account does not prevent another eligible account anchoring" {
@@ -246,20 +265,6 @@ test "paused account does not prevent another eligible account anchoring" {
 
     const decision = stagger.plan(accounts[0..], now, policy());
     try std.testing.expectEqualStrings("eligible", decision.anchor.account_key);
-}
-
-test "wait selects earliest safe time across temporarily blocked accounts" {
-    var first = usage(now, 100, 20);
-    first.five_hour.resets_at = now + 600;
-    var second = usage(now, 100, 20);
-    second.five_hour.resets_at = now + 300;
-    const accounts = [_]stagger.Account{
-        account("first", now, first),
-        account("second", now, second),
-    };
-
-    const decision = stagger.plan(accounts[0..], now, policy());
-    try std.testing.expectEqual(now + 300 + policy().safety_margin_seconds, decision.wait.until);
 }
 
 test "no configured accounts and invalid policy pause safely" {

@@ -14,13 +14,44 @@ const Recorder = struct {
     argv: ?[]const []const u8 = null,
 };
 
-fn record(context: ?*anyopaque, argv: []const []const u8) !void {
+fn record(context: ?*anyopaque, _: []const u8, argv: []const []const u8) !void {
     const recorder: *Recorder = @ptrCast(@alignCast(context.?));
     recorder.calls += 1;
     recorder.argv = argv;
 }
 
-fn failAnchor(_: ?*anyopaque, _: []const []const u8) !void {
+const AnchorDirectoryRecorder = struct {
+    allocator: std.mem.Allocator,
+    paths: [3]?[]u8 = .{ null, null, null },
+    calls: usize = 0,
+
+    fn deinit(self: *AnchorDirectoryRecorder) void {
+        for (self.paths) |path| if (path) |value| self.allocator.free(value);
+        self.* = undefined;
+    }
+};
+
+fn recordEmptyAnchorDirectory(context: ?*anyopaque, working_directory: []const u8, _: []const []const u8) !void {
+    const recorder: *AnchorDirectoryRecorder = @ptrCast(@alignCast(context.?));
+    var dir = try fs.cwd().openDir(working_directory, .{ .iterate = true });
+    defer dir.close();
+    var iterator = dir.iterate();
+    try std.testing.expect(try iterator.next() == null);
+    const directory_stat = try fs.cwd().statFile(working_directory, .{});
+    if (comptime @import("builtin").os.tag != .windows) {
+        try std.testing.expectEqual(@as(std.posix.mode_t, 0o700), directory_stat.permissions.toMode() & 0o777);
+    }
+    try dir.writeFile(.{ .sub_path = "anchor-marker", .data = "present only during this anchor" });
+    recorder.paths[recorder.calls] = try recorder.allocator.dupe(u8, working_directory);
+    recorder.calls += 1;
+}
+
+fn recordEmptyAnchorDirectoryThenFail(context: ?*anyopaque, working_directory: []const u8, argv: []const []const u8) !void {
+    try recordEmptyAnchorDirectory(context, working_directory, argv);
+    return error.TestAnchorRunnerFailed;
+}
+
+fn failAnchor(_: ?*anyopaque, _: []const u8, _: []const []const u8) !void {
     return error.StaggerAnchorFailed;
 }
 
@@ -40,14 +71,46 @@ fn expectArgv(actual: []const []const u8, expected: []const []const u8) !void {
 }
 
 test "anchor runner uses the complete bounded read-only command" {
+    var tmp = fs.tmpDir(.{});
+    defer tmp.cleanup();
+    const allocator = std.testing.allocator;
+    const codex_home = try tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(codex_home);
     var recorder = Recorder{};
-    try anchor.run(&recorder, record);
+    try anchor.run(allocator, codex_home, &recorder, record);
     try std.testing.expectEqual(@as(usize, 1), recorder.calls);
     try expectArgv(recorder.argv.?, &.{
         "codex",                "exec",                  "--model",  "gpt-5.6-luna",              "--ephemeral",
         "--ignore-user-config", "--ignore-rules",        "-c",       "approval_policy=\"never\"", "--sandbox",
         "read-only",            "--skip-git-repo-check", "OK only.",
     });
+}
+
+test "each anchor receives an empty private directory that is removed afterward" {
+    var tmp = fs.tmpDir(.{});
+    defer tmp.cleanup();
+    const allocator = std.testing.allocator;
+    const codex_home = try tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(codex_home);
+    const anchor_root = try std.fs.path.join(allocator, &.{ codex_home, "accounts", "stagger-anchor" });
+    defer allocator.free(anchor_root);
+    var recorder = AnchorDirectoryRecorder{ .allocator = allocator };
+    defer recorder.deinit();
+
+    try anchor.run(allocator, codex_home, &recorder, recordEmptyAnchorDirectory);
+    try anchor.run(allocator, codex_home, &recorder, recordEmptyAnchorDirectory);
+    try std.testing.expectError(error.TestAnchorRunnerFailed, anchor.run(allocator, codex_home, &recorder, recordEmptyAnchorDirectoryThenFail));
+
+    try std.testing.expectEqual(@as(usize, 3), recorder.calls);
+    const first_path = recorder.paths[0] orelse return error.TestUnexpectedResult;
+    const second_path = recorder.paths[1] orelse return error.TestUnexpectedResult;
+    const third_path = recorder.paths[2] orelse return error.TestUnexpectedResult;
+    try std.testing.expect(!std.mem.eql(u8, first_path, second_path));
+    try std.testing.expect(!std.mem.eql(u8, second_path, third_path));
+    var root = try fs.cwd().openDir(anchor_root, .{ .iterate = true });
+    defer root.close();
+    var iterator = root.iterate();
+    try std.testing.expect(try iterator.next() == null);
 }
 
 const LaunchdRecorder = struct {
@@ -275,6 +338,67 @@ test "paid credit status and balance do not affect eligible account selection" {
 
     try std.testing.expectEqual(coordinator.Outcome.anchored, outcome);
     try std.testing.expectEqual(@as(usize, 1), recorder.calls);
+}
+
+test "unusable active usage fails over to an eligible peer immediately" {
+    const UnusableUsage = enum { stale, missing, malformed, exact_window_missing };
+    const unusable_usage = [_]UnusableUsage{ .stale, .missing, .malformed, .exact_window_missing };
+
+    for (unusable_usage) |case| {
+        var tmp = fs.tmpDir(.{});
+        defer tmp.cleanup();
+        const allocator = std.testing.allocator;
+        const codex_home = try tmp.dir.realpathAlloc(allocator, ".");
+        defer allocator.free(codex_home);
+        try seedScheduler(allocator, codex_home, anchor_now);
+
+        {
+            var reg = try registry.loadRegistry(allocator, codex_home);
+            defer reg.deinit(allocator);
+            const active_account = &reg.accounts.items[0];
+            switch (case) {
+                .stale => active_account.last_usage_at = anchor_now - 301,
+                .missing => if (active_account.last_usage) |*last_usage| {
+                    registry.freeRateLimitSnapshot(allocator, last_usage);
+                    active_account.last_usage = null;
+                } else return error.TestUnexpectedResult,
+                .malformed => if (active_account.last_usage) |*last_usage| {
+                    if (last_usage.primary) |*five_hour| {
+                        five_hour.used_percent = 101;
+                    } else return error.TestUnexpectedResult;
+                } else return error.TestUnexpectedResult,
+                .exact_window_missing => if (active_account.last_usage) |*last_usage| {
+                    if (last_usage.secondary) |*weekly| {
+                        weekly.window_minutes = 60;
+                    } else return error.TestUnexpectedResult;
+                } else return error.TestUnexpectedResult,
+            }
+            try registry.activateAccountByKey(allocator, codex_home, &reg, active_account.account_key);
+            try registry.saveRegistry(allocator, codex_home, &reg);
+        }
+
+        {
+            var persisted = try scheduler.load(allocator, codex_home);
+            defer persisted.deinit(allocator);
+            persisted.state.accounts[0].last_anchor_at = anchor_now;
+            persisted.state.accounts[1].due_at = anchor_now + 10_000;
+            try scheduler.save(allocator, codex_home, &persisted.config, &persisted.state);
+        }
+
+        var recorder = Recorder{};
+        const outcome = try coordinator.tick(allocator, codex_home, .{ .dry_run = false, .use_api = false }, .{
+            .context = &recorder,
+            .now_seconds = anchor_now,
+            .refresh_usage = noRefresh,
+            .run_anchor = record,
+        });
+
+        try std.testing.expectEqual(coordinator.Outcome.anchored, outcome);
+        try std.testing.expectEqual(@as(usize, 1), recorder.calls);
+        var active = try registry.loadRegistry(allocator, codex_home);
+        defer active.deinit(allocator);
+        try std.testing.expectEqualStrings(active.accounts.items[1].account_key, active.active_account_key orelse return error.TestUnexpectedResult);
+    }
 }
 
 test "anchor failure keeps the provisional duplicate guard across a retry" {
