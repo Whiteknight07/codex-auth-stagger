@@ -16,7 +16,6 @@ pub const UsageSnapshot = struct {
     observed_at: i64,
     five_hour: RateLimitWindow,
     weekly: RateLimitWindow,
-    paid_credits_enabled: bool,
 };
 
 pub const Account = struct {
@@ -34,14 +33,12 @@ pub const PauseReason = enum {
     usage_stale,
     usage_malformed,
     weekly_reserve,
-    paid_credit_risk,
 };
 
 pub const WaitReason = enum {
     scheduled,
     spacing,
     five_hour_reset,
-    paid_credit_risk,
 };
 
 pub const AnchorDecision = struct {
@@ -141,7 +138,13 @@ pub fn plan(accounts: []const Account, now: i64, policy: Policy) Decision {
             },
         }
 
-        if (snapshot.weekly.used_percent >= 100.0 - policy.weekly_reserve_percent) {
+        if (snapshot.five_hour.used_percent < 100.0 and !hasRequiredHeadroom(snapshot.five_hour.used_percent, 1.0)) {
+            considerPause(&best_pause, candidate, .usage_malformed);
+            continue;
+        }
+
+        const weekly_required_remaining_percent = @max(1.0, policy.weekly_reserve_percent);
+        if (!hasRequiredHeadroom(snapshot.weekly.used_percent, weekly_required_remaining_percent)) {
             considerPause(&best_pause, candidate, .weekly_reserve);
             continue;
         }
@@ -157,30 +160,15 @@ pub fn plan(accounts: []const Account, now: i64, policy: Policy) Decision {
             .no_anchors, .invalid => {},
         }
 
-        if (snapshot.paid_credits_enabled) {
-            const reset_until = std.math.add(i64, snapshot.five_hour.resets_at, policy.safety_margin_seconds) catch {
-                considerPause(&best_pause, candidate, .usage_malformed);
-                continue;
-            };
-            if (reset_until <= now) {
-                considerPause(&best_pause, candidate, .paid_credit_risk);
-                continue;
-            }
-            if (reset_until > until) until = reset_until;
-            wait_reason = .paid_credit_risk;
-            considerWait(&best_wait, .{
-                .account_key = account.key,
-                .until = until,
-                .reason = wait_reason,
-            });
-            continue;
-        }
-
         if (snapshot.five_hour.used_percent >= 100.0) {
             const reset_until = std.math.add(i64, snapshot.five_hour.resets_at, policy.safety_margin_seconds) catch {
                 considerPause(&best_pause, candidate, .usage_malformed);
                 continue;
             };
+            if (reset_until <= now) {
+                considerPause(&best_pause, candidate, .usage_malformed);
+                continue;
+            }
             if (reset_until > until) {
                 until = reset_until;
                 wait_reason = .five_hour_reset;
@@ -244,6 +232,10 @@ fn validateUsage(snapshot: UsageSnapshot, now: i64, policy: Policy) Validation {
 
 fn validPercent(value: f64) bool {
     return std.math.isFinite(value) and value >= 0.0 and value <= 100.0;
+}
+
+fn hasRequiredHeadroom(used_percent: f64, required_remaining_percent: f64) bool {
+    return used_percent < 100.0 - required_remaining_percent;
 }
 
 fn hasDuplicateKey(accounts: []const Account, key: []const u8, index: usize) bool {

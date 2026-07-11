@@ -8,7 +8,7 @@ pub const Runner = *const fn (context: ?*anyopaque, argv: []const []const u8) an
 
 pub fn run(context: ?*anyopaque, runner: Runner) !void {
     const argv = [_][]const u8{
-        "codex", "exec", "--model", "gpt-5.6-luna", "--ephemeral", "--ignore-user-config", "--ignore-rules", "-c", "approval_policy=\"never\"", "--sandbox", "read-only", "--skip-git-repo-check", "Reply exactly hi. Do not use tools.",
+        "codex", "exec", "--model", "gpt-5.6-luna", "--ephemeral", "--ignore-user-config", "--ignore-rules", "-c", "approval_policy=\"never\"", "--sandbox", "read-only", "--skip-git-repo-check", "OK only.",
     };
     try runner(context, &argv);
 }

@@ -49,11 +49,12 @@ pub fn tick(allocator: std.mem.Allocator, codex_home: []const u8, options: Optio
         for (persisted.config.account_keys, refreshed.snapshots) |key, snapshot| {
             registry.updateUsage(allocator, &reg, key, try registry.cloneRateLimitSnapshot(allocator, snapshot));
         }
-        if (!options.dry_run) try registry.saveRegistry(allocator, codex_home, &reg);
     }
-    const accounts = try plannerAccounts(allocator, &persisted, &reg);
+    const accounts = try plannerAccounts(allocator, &persisted, &reg, if (options.use_api) runtime.now_seconds else null);
     defer allocator.free(accounts);
-    switch (core.plan(accounts, runtime.now_seconds, persisted.config.policy)) {
+    const planned_decision = core.plan(accounts, runtime.now_seconds, persisted.config.policy);
+    if (options.use_api and !options.dry_run) try registry.saveRegistry(allocator, codex_home, &reg);
+    switch (planned_decision) {
         .anchor => |decision| {
             if (options.dry_run) return .dry_run;
             const index = stateIndex(&persisted.state, decision.account_key) orelse return error.InvalidSchedulerData;
@@ -100,13 +101,13 @@ pub fn refreshSelectedUsage(_: ?*anyopaque, allocator: std.mem.Allocator, codex_
     return .{ .snapshots = snapshots };
 }
 
-fn plannerAccounts(allocator: std.mem.Allocator, persisted: *const storage.Scheduler, reg: *const registry.Registry) ![]core.Account {
+fn plannerAccounts(allocator: std.mem.Allocator, persisted: *const storage.Scheduler, reg: *const registry.Registry, fresh_usage_observed_at: ?i64) ![]core.Account {
     const result = try allocator.alloc(core.Account, 2);
     errdefer allocator.free(result);
     for (persisted.config.account_keys, 0..) |key, index| {
         const record_index = findAccountIndex(reg, key) orelse return error.StaggerAccountMissing;
         const record = &reg.accounts.items[record_index];
-        result[index] = .{ .key = key, .usage = try mapUsage(record), .due_at = persisted.state.accounts[index].due_at, .last_anchor_at = persisted.state.accounts[index].last_anchor_at };
+        result[index] = .{ .key = key, .usage = try mapUsage(record, fresh_usage_observed_at), .due_at = persisted.state.accounts[index].due_at, .last_anchor_at = persisted.state.accounts[index].last_anchor_at };
     }
     return result;
 }
@@ -122,13 +123,12 @@ fn stateIndex(state: *const storage.State, key: []const u8) ?usize {
     for (state.accounts, 0..) |account, index| if (std.mem.eql(u8, account.account_key, key)) return index;
     return null;
 }
-fn mapUsage(record: *const registry.AccountRecord) !?core.UsageSnapshot {
+fn mapUsage(record: *const registry.AccountRecord, fresh_usage_observed_at: ?i64) !?core.UsageSnapshot {
     const snapshot = record.last_usage orelse return null;
-    const observed_at = record.last_usage_at orelse return error.StaggerUsageMalformed;
+    const observed_at = fresh_usage_observed_at orelse record.last_usage_at orelse return error.StaggerUsageMalformed;
     const five = exactWindow(snapshot, five_hours_minutes) orelse return error.StaggerUsageMalformed;
     const week = exactWindow(snapshot, weekly_minutes) orelse return error.StaggerUsageMalformed;
-    const credits = snapshot.credits orelse return error.StaggerUsageMalformed;
-    return .{ .observed_at = observed_at, .five_hour = .{ .used_percent = five.used_percent, .resets_at = five.resets_at orelse return error.StaggerUsageMalformed }, .weekly = .{ .used_percent = week.used_percent, .resets_at = week.resets_at orelse return error.StaggerUsageMalformed }, .paid_credits_enabled = credits.has_credits or credits.unlimited };
+    return .{ .observed_at = observed_at, .five_hour = .{ .used_percent = five.used_percent, .resets_at = five.resets_at orelse return error.StaggerUsageMalformed }, .weekly = .{ .used_percent = week.used_percent, .resets_at = week.resets_at orelse return error.StaggerUsageMalformed } };
 }
 fn exactWindow(snapshot: registry.RateLimitSnapshot, minutes: i64) ?registry.RateLimitWindow {
     var found: ?registry.RateLimitWindow = null;

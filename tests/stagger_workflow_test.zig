@@ -28,6 +28,10 @@ fn noRefresh(_: ?*anyopaque, _: std.mem.Allocator, _: []const u8, _: [2][]const 
     return error.TestUnexpectedResult;
 }
 
+fn refreshSafeUsage(_: ?*anyopaque, _: std.mem.Allocator, _: []const u8, _: [2][]const u8) !coordinator.RefreshedUsage {
+    return .{ .snapshots = .{ snapshot(anchor_now), snapshot(anchor_now) } };
+}
+
 fn expectArgv(actual: []const []const u8, expected: []const []const u8) !void {
     try std.testing.expectEqual(expected.len, actual.len);
     for (expected, actual) |expected_arg, actual_arg| {
@@ -40,9 +44,9 @@ test "anchor runner uses the complete bounded read-only command" {
     try anchor.run(&recorder, record);
     try std.testing.expectEqual(@as(usize, 1), recorder.calls);
     try expectArgv(recorder.argv.?, &.{
-        "codex",                "exec",                  "--model",                             "gpt-5.6-luna",              "--ephemeral",
-        "--ignore-user-config", "--ignore-rules",        "-c",                                  "approval_policy=\"never\"", "--sandbox",
-        "read-only",            "--skip-git-repo-check", "Reply exactly hi. Do not use tools.",
+        "codex",                "exec",                  "--model",  "gpt-5.6-luna",              "--ephemeral",
+        "--ignore-user-config", "--ignore-rules",        "-c",       "approval_policy=\"never\"", "--sandbox",
+        "read-only",            "--skip-git-repo-check", "OK only.",
     });
 }
 
@@ -221,6 +225,56 @@ test "dry run does not persist state activate an account or anchor" {
     var reg = try registry.loadRegistry(allocator, codex_home);
     defer reg.deinit(allocator);
     try std.testing.expect(reg.active_account_key == null);
+}
+
+test "a fresh API usage check replaces stale cached usage before planning" {
+    var tmp = fs.tmpDir(.{});
+    defer tmp.cleanup();
+    const allocator = std.testing.allocator;
+    const codex_home = try tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(codex_home);
+    try seedScheduler(allocator, codex_home, anchor_now - 1_000);
+    var recorder = Recorder{};
+
+    const outcome = try coordinator.tick(allocator, codex_home, .{ .dry_run = false, .use_api = true }, .{
+        .context = &recorder,
+        .now_seconds = anchor_now,
+        .refresh_usage = refreshSafeUsage,
+        .run_anchor = record,
+    });
+
+    try std.testing.expectEqual(coordinator.Outcome.anchored, outcome);
+    try std.testing.expectEqual(@as(usize, 1), recorder.calls);
+}
+
+test "paid credit status and balance do not affect eligible account selection" {
+    var tmp = fs.tmpDir(.{});
+    defer tmp.cleanup();
+    const allocator = std.testing.allocator;
+    const codex_home = try tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(codex_home);
+    try seedScheduler(allocator, codex_home, anchor_now);
+    var reg = try registry.loadRegistry(allocator, codex_home);
+    defer reg.deinit(allocator);
+    if (reg.accounts.items[0].last_usage) |*last_usage| {
+        last_usage.credits = .{
+            .has_credits = true,
+            .unlimited = false,
+            .balance = try allocator.dupe(u8, "1000"),
+        };
+    } else return error.TestUnexpectedResult;
+    try registry.saveRegistry(allocator, codex_home, &reg);
+    var recorder = Recorder{};
+
+    const outcome = try coordinator.tick(allocator, codex_home, .{ .dry_run = false, .use_api = false }, .{
+        .context = &recorder,
+        .now_seconds = anchor_now,
+        .refresh_usage = noRefresh,
+        .run_anchor = record,
+    });
+
+    try std.testing.expectEqual(coordinator.Outcome.anchored, outcome);
+    try std.testing.expectEqual(@as(usize, 1), recorder.calls);
 }
 
 test "anchor failure keeps the provisional duplicate guard across a retry" {

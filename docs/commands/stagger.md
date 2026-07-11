@@ -37,7 +37,7 @@ By default, a tick uses the configured API-refresh mode. `--api` explicitly refr
 
 `--skip-api` makes the tick use only cached usage stored in the registry. It does not scan local session files. Cached data can be stale or incomplete, so this mode does not relax any safety checks.
 
-The scheduler fails closed: it pauses rather than authorizing an anchor when the usage data is missing, stale, malformed, or ambiguous. Accounts with paid credits enabled never authorize an anchor. It also preserves the configured weekly reserve, so an account at or beyond that reserve threshold is not used for an anchor.
+The scheduler fails closed: it pauses rather than authorizing an anchor when the usage data is missing, stale, malformed, ambiguous, or at a safety boundary. An account must have strictly more than 1% remaining in both the exact five-hour and weekly windows. It also preserves the configured weekly reserve (5% by default); when that is stricter, the reserve is used. Paid-credit status and balance never add capacity or affect account selection.
 
 Use `--dry-run` before enabling automation or after changing configuration. It shows the planning outcome without changing the active account or writing an anchor.
 
