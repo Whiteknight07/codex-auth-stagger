@@ -37,7 +37,7 @@ fn recordEmptyAnchorDirectory(context: ?*anyopaque, working_directory: []const u
     defer dir.close();
     var iterator = dir.iterate();
     try std.testing.expect(try iterator.next() == null);
-    const directory_stat = try fs.cwd().statFile(working_directory, .{});
+    const directory_stat = try fs.cwd().statFile(working_directory);
     if (comptime @import("builtin").os.tag != .windows) {
         try std.testing.expectEqual(@as(std.posix.mode_t, 0o700), directory_stat.permissions.toMode() & 0o777);
     }

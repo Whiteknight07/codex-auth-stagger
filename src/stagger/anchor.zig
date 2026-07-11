@@ -29,7 +29,7 @@ fn createWorkingDirectory(allocator: std.mem.Allocator, codex_home: []const u8) 
     var random_bytes: [random_bytes_count]u8 = undefined;
     var random_name: [random_name_len]u8 = undefined;
     for (0..16) |_| {
-        std.crypto.random.bytes(&random_bytes);
+        runtime.io().random(&random_bytes);
         _ = std.base64.url_safe_no_pad.Encoder.encode(&random_name, &random_bytes);
         {
             const working_directory = try std.fs.path.join(allocator, &.{ parent, &random_name });

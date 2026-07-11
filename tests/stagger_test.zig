@@ -196,7 +196,7 @@ test "an exhausted five hour reading after its reset fails closed" {
     const accounts = [_]stagger.Account{account("alpha", now, snapshot)};
 
     const decision = stagger.plan(accounts[0..], now, policy());
-    try std.testing.expectEqual(stagger.PauseReason.usage_malformed, decision.paused.reason);
+    try std.testing.expectEqual(stagger.PauseReason.usage_below_threshold, decision.paused.reason);
 }
 
 test "reset timestamps at the observation time are malformed" {

@@ -58,7 +58,7 @@ fn runChildCaptureWithInputCwdAndOutputLimit(
 ) !ChildCaptureResult {
     var child = std.process.spawn(app_runtime.io(), .{
         .argv = argv,
-        .cwd = if (cwd) |path| .{ .path = path } else null,
+        .cwd = if (cwd) |path| .{ .path = path } else .inherit,
         .environ_map = env_map,
         .stdin = if (stdin_bytes != null) .pipe else .ignore,
         .stdout = .pipe,
