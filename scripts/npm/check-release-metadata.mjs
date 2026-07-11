@@ -70,11 +70,11 @@ function checkPackageMetadata() {
       fail(`${pkg.id}: archiveName ${pkg.archiveName} must end with ${expectedArchiveSuffix(pkg)}`);
     }
     if (pkg.os === "win32") {
-      requireEqual(`${pkg.id}.binaryName`, pkg.binaryName, "codex-auth.exe");
-      requireEqual(`${pkg.id}.binaryFiles`, pkg.binaryFiles.join(","), "codex-auth.exe");
+      requireEqual(`${pkg.id}.binaryName`, pkg.binaryName, "codex-auth-stagger.exe");
+      requireEqual(`${pkg.id}.binaryFiles`, pkg.binaryFiles.join(","), "codex-auth-stagger.exe");
     } else {
-      requireEqual(`${pkg.id}.binaryName`, pkg.binaryName, "codex-auth");
-      requireEqual(`${pkg.id}.binaryFiles`, pkg.binaryFiles.join(","), "codex-auth");
+      requireEqual(`${pkg.id}.binaryName`, pkg.binaryName, "codex-auth-stagger");
+      requireEqual(`${pkg.id}.binaryFiles`, pkg.binaryFiles.join(","), "codex-auth-stagger");
     }
   }
 }
@@ -97,11 +97,11 @@ function checkRootPackage() {
 }
 
 function checkCliWrapperMap() {
-  const wrapper = readText("bin/codex-auth.js");
+  const wrapper = readText("bin/codex-auth-stagger.js");
   for (const pkg of platformPackages) {
     const expectedEntry = `"${pkg.os}:${pkg.cpu}": "${pkg.packageName}"`;
     if (!wrapper.includes(expectedEntry)) {
-      fail(`bin/codex-auth.js missing packageMap entry ${expectedEntry}`);
+      fail(`bin/codex-auth-stagger.js missing packageMap entry ${expectedEntry}`);
     }
   }
 }

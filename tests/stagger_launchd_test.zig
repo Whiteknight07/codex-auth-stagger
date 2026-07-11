@@ -16,7 +16,7 @@ test "LaunchAgent paths use the supplied user home" {
     const paths = try launchd.paths(allocator, home);
     defer paths.deinit(std.testing.allocator);
 
-    const plist = try schedulerPath(allocator, &.{ home, "Library", "LaunchAgents", "com.loongphy.codex-auth.stagger.plist" });
+    const plist = try schedulerPath(allocator, &.{ home, "Library", "LaunchAgents", "com.whiteknight07.codex-auth-stagger.plist" });
     defer allocator.free(plist);
     const stdout_log = try schedulerPath(allocator, &.{ home, "Library", "Logs", "codex-auth-stagger.log" });
     defer allocator.free(stdout_log);
@@ -37,12 +37,12 @@ test "LaunchAgent plist renders escaped scheduler inputs" {
         .home = home,
         .codex_home = codex_home,
         .path = "/opt/codex&bin:/usr/bin",
-        .executable = if (builtin.os.tag == .windows) "C:\\Applications\\Codex Auth & Tools\\codex-auth.exe" else "/Applications/Codex Auth & Tools/codex-auth",
+        .executable = if (builtin.os.tag == .windows) "C:\\Applications\\Codex Auth & Tools\\codex-auth-stagger.exe" else "/Applications/Codex Auth & Tools/codex-auth-stagger",
     });
     defer std.testing.allocator.free(rendered);
 
     try std.testing.expect(std.mem.indexOf(u8, rendered, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>") != null);
-    const expected_executable = if (builtin.os.tag == .windows) "<string>C:\\Applications\\Codex Auth &amp; Tools\\codex-auth.exe</string>" else "<string>/Applications/Codex Auth &amp; Tools/codex-auth</string>";
+    const expected_executable = if (builtin.os.tag == .windows) "<string>C:\\Applications\\Codex Auth &amp; Tools\\codex-auth-stagger.exe</string>" else "<string>/Applications/Codex Auth &amp; Tools/codex-auth-stagger</string>";
     try std.testing.expect(std.mem.indexOf(u8, rendered, expected_executable) != null);
     try std.testing.expect(std.mem.indexOf(u8, rendered, "<string>stagger</string>\n    <string>tick</string>") != null);
     const expected_codex_home_element = if (builtin.os.tag == .windows) "<string>C:\\Users\\Ada &amp; Bob\\.codex&lt;stagger&gt;</string>" else "<string>/Users/Ada &amp; Bob/.codex&lt;stagger&gt;</string>";
@@ -60,13 +60,13 @@ test "LaunchAgent renderer rejects a relative executable" {
         .home = "/Users/ada",
         .codex_home = "/Users/ada/.codex",
         .path = "/usr/bin",
-        .executable = "codex-auth",
+        .executable = "codex-auth-stagger",
     }));
 }
 
 test "launchctl plans target the invoking user's service domain" {
     const allocator = std.testing.allocator;
-    const plist = "/Users/ada/Library/LaunchAgents/com.loongphy.codex-auth.stagger.plist";
+    const plist = "/Users/ada/Library/LaunchAgents/com.whiteknight07.codex-auth-stagger.plist";
 
     var bootstrap = try launchd.commandPlan(allocator, .bootstrap, 501, plist);
     defer bootstrap.deinit(allocator);
@@ -78,16 +78,16 @@ test "launchctl plans target the invoking user's service domain" {
     var bootout = try launchd.commandPlan(allocator, .bootout, 501, plist);
     defer bootout.deinit(allocator);
     try std.testing.expectEqualStrings("bootout", bootout.argv[1]);
-    try std.testing.expectEqualStrings("gui/501/com.loongphy.codex-auth.stagger", bootout.argv[2]);
+    try std.testing.expectEqualStrings("gui/501/com.whiteknight07.codex-auth-stagger", bootout.argv[2]);
 
     var print = try launchd.commandPlan(allocator, .print, 501, plist);
     defer print.deinit(allocator);
     try std.testing.expectEqualStrings("print", print.argv[1]);
-    try std.testing.expectEqualStrings("gui/501/com.loongphy.codex-auth.stagger", print.argv[2]);
+    try std.testing.expectEqualStrings("gui/501/com.whiteknight07.codex-auth-stagger", print.argv[2]);
 }
 
 test "launchctl print only treats explicit service-not-found output as unloaded" {
-    try std.testing.expect(launchd.printReportsServiceNotFound("Could not find service \"com.loongphy.codex-auth.stagger\" in domain for user gui: 501"));
+    try std.testing.expect(launchd.printReportsServiceNotFound("Could not find service \"com.whiteknight07.codex-auth-stagger\" in domain for user gui: 501"));
     try std.testing.expect(launchd.printReportsServiceNotFound("service not found"));
     try std.testing.expect(!launchd.printReportsServiceNotFound("Operation not permitted"));
     try std.testing.expect(!launchd.printReportsServiceNotFound("launchctl: malformed response"));

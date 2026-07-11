@@ -20,7 +20,7 @@ pub fn writeHelp(
     use_color: bool,
 ) !void {
     if (use_color) try out.writeAll(style.ansi.cyan);
-    try out.writeAll("codex-auth");
+    try out.writeAll("codex-auth-stagger");
     if (use_color) try out.writeAll(style.ansi.reset);
     try out.writeAll(" ");
     if (use_color) try out.writeAll(style.ansi.cyan);
@@ -67,7 +67,7 @@ pub fn writeHelp(
     try out.writeAll("Notes:");
     if (use_color) try out.writeAll(style.ansi.reset);
     try out.writeAll("\n");
-    try out.writeAll("  Run `codex-auth <command> --help` for command-specific usage details.\n");
+    try out.writeAll("  Run `codex-auth-stagger <command> --help` for command-specific usage details.\n");
     try out.writeAll("  API-backed refresh is the default; use `--skip-api` for a local-only foreground command.\n");
 }
 
@@ -117,7 +117,7 @@ pub fn writeCommandHelp(out: *std.Io.Writer, use_color: bool, topic: HelpTopic) 
 
 fn writeCommandHelpHeader(out: *std.Io.Writer, use_color: bool, topic: HelpTopic) !void {
     if (use_color) try out.writeAll(style.ansi.cyan);
-    try out.print("codex-auth {s}", .{commandNameForTopic(topic)});
+    try out.print("codex-auth-stagger {s}", .{commandNameForTopic(topic)});
     if (use_color) try out.writeAll(style.ansi.reset);
     try out.writeAll("\n");
     try out.print("{s}\n", .{commandDescriptionForTopic(topic)});
@@ -191,74 +191,74 @@ pub fn writeUsageSectionStyled(out: *std.Io.Writer, use_color: bool, topic: Help
 fn writeUsageLines(out: *std.Io.Writer, topic: HelpTopic) !void {
     switch (topic) {
         .top_level => {
-            try out.writeAll("  codex-auth <command>\n");
-            try out.writeAll("  codex-auth -\n");
-            try out.writeAll("  codex-auth --help\n");
-            try out.writeAll("  codex-auth help <command>\n");
+            try out.writeAll("  codex-auth-stagger <command>\n");
+            try out.writeAll("  codex-auth-stagger -\n");
+            try out.writeAll("  codex-auth-stagger --help\n");
+            try out.writeAll("  codex-auth-stagger help <command>\n");
         },
-        .list => try out.writeAll("  codex-auth list [--live] [--active] [--api|--skip-api]\n"),
+        .list => try out.writeAll("  codex-auth-stagger list [--live] [--active] [--api|--skip-api]\n"),
         .login => {
-            try out.writeAll("  codex-auth login\n");
-            try out.writeAll("  codex-auth login --device-auth\n");
+            try out.writeAll("  codex-auth-stagger login\n");
+            try out.writeAll("  codex-auth-stagger login --device-auth\n");
         },
         .import_auth => {
-            try out.writeAll("  codex-auth import <path> [--alias <alias>]\n");
-            try out.writeAll("  codex-auth import --cpa [<path>] [--alias <alias>]\n");
-            try out.writeAll("  codex-auth import --purge [<path>]\n");
+            try out.writeAll("  codex-auth-stagger import <path> [--alias <alias>]\n");
+            try out.writeAll("  codex-auth-stagger import --cpa [<path>] [--alias <alias>]\n");
+            try out.writeAll("  codex-auth-stagger import --purge [<path>]\n");
         },
         .export_auth => {
-            try out.writeAll("  codex-auth export [<dir>]\n");
-            try out.writeAll("  codex-auth export --cpa [<dir>]\n");
+            try out.writeAll("  codex-auth-stagger export [<dir>]\n");
+            try out.writeAll("  codex-auth-stagger export --cpa [<dir>]\n");
         },
         .switch_account => {
-            try out.writeAll("  codex-auth switch -\n");
-            try out.writeAll("  codex-auth switch [--live] [--api|--skip-api]\n");
-            try out.writeAll("  codex-auth switch <alias|email|display-number|query>\n");
+            try out.writeAll("  codex-auth-stagger switch -\n");
+            try out.writeAll("  codex-auth-stagger switch [--live] [--api|--skip-api]\n");
+            try out.writeAll("  codex-auth-stagger switch <alias|email|display-number|query>\n");
         },
         .remove_account => {
-            try out.writeAll("  codex-auth remove [--live] [--api|--skip-api]\n");
-            try out.writeAll("  codex-auth remove <alias|email|display-number|query>...\n");
-            try out.writeAll("  codex-auth remove --all\n");
+            try out.writeAll("  codex-auth-stagger remove [--live] [--api|--skip-api]\n");
+            try out.writeAll("  codex-auth-stagger remove <alias|email|display-number|query>...\n");
+            try out.writeAll("  codex-auth-stagger remove --all\n");
         },
         .alias => {
-            try out.writeAll("  codex-auth alias set <alias|email|display-number|query> <alias>\n");
-            try out.writeAll("  codex-auth alias clear <alias|email|display-number|query>\n");
+            try out.writeAll("  codex-auth-stagger alias set <alias|email|display-number|query> <alias>\n");
+            try out.writeAll("  codex-auth-stagger alias clear <alias|email|display-number|query>\n");
         },
         .clean => {
-            try out.writeAll("  codex-auth clean\n");
-            try out.writeAll("  codex-auth clean background\n");
+            try out.writeAll("  codex-auth-stagger clean\n");
+            try out.writeAll("  codex-auth-stagger clean background\n");
         },
         .config => {
-            try out.writeAll("  codex-auth config live --interval <seconds>\n");
+            try out.writeAll("  codex-auth-stagger config live --interval <seconds>\n");
         },
         .app => {
-            try out.writeAll("  codex-auth app [--id <id>] [--codex-cli-path <path>] [--codex-home <path>] [--platform win|wsl|mac]\n");
+            try out.writeAll("  codex-auth-stagger app [--id <id>] [--codex-cli-path <path>] [--codex-home <path>] [--platform win|wsl|mac]\n");
         },
         .stagger => {
-            try out.writeAll("  codex-auth stagger configure --primary <selector> --secondary <selector> [--spacing-minutes <1..299>] [--weekly-reserve-percent <0..99>]\n");
-            try out.writeAll("  codex-auth stagger tick [--dry-run] [--api|--skip-api]\n");
-            try out.writeAll("  codex-auth stagger status\n");
-            try out.writeAll("  codex-auth stagger enable\n");
-            try out.writeAll("  codex-auth stagger disable\n");
-            try out.writeAll("  codex-auth stagger uninstall\n");
+            try out.writeAll("  codex-auth-stagger stagger configure --primary <selector> --secondary <selector> [--spacing-minutes <1..299>] [--weekly-reserve-percent <0..99>]\n");
+            try out.writeAll("  codex-auth-stagger stagger tick [--dry-run] [--api|--skip-api]\n");
+            try out.writeAll("  codex-auth-stagger stagger status\n");
+            try out.writeAll("  codex-auth-stagger stagger enable\n");
+            try out.writeAll("  codex-auth-stagger stagger disable\n");
+            try out.writeAll("  codex-auth-stagger stagger uninstall\n");
         },
     }
 }
 
 pub fn helpCommandForTopic(topic: HelpTopic) []const u8 {
     return switch (topic) {
-        .top_level => "codex-auth --help",
-        .list => "codex-auth list --help",
-        .login => "codex-auth login --help",
-        .import_auth => "codex-auth import --help",
-        .export_auth => "codex-auth export --help",
-        .switch_account => "codex-auth switch --help",
-        .remove_account => "codex-auth remove --help",
-        .alias => "codex-auth alias --help",
-        .clean => "codex-auth clean --help",
-        .config => "codex-auth config --help",
-        .app => "codex-auth app --help",
-        .stagger => "codex-auth stagger --help",
+        .top_level => "codex-auth-stagger --help",
+        .list => "codex-auth-stagger list --help",
+        .login => "codex-auth-stagger login --help",
+        .import_auth => "codex-auth-stagger import --help",
+        .export_auth => "codex-auth-stagger export --help",
+        .switch_account => "codex-auth-stagger switch --help",
+        .remove_account => "codex-auth-stagger remove --help",
+        .alias => "codex-auth-stagger alias --help",
+        .clean => "codex-auth-stagger clean --help",
+        .config => "codex-auth-stagger config --help",
+        .app => "codex-auth-stagger app --help",
+        .stagger => "codex-auth-stagger stagger --help",
     };
 }
 
@@ -347,73 +347,73 @@ fn writeExamplesSectionStyled(out: *std.Io.Writer, use_color: bool, topic: HelpT
 fn writeExampleLines(out: *std.Io.Writer, topic: HelpTopic) !void {
     switch (topic) {
         .top_level => {
-            try out.writeAll("  codex-auth list\n");
-            try out.writeAll("  codex-auth import /path/to/auth.json --alias personal\n");
-            try out.writeAll("  codex-auth switch --live\n");
+            try out.writeAll("  codex-auth-stagger list\n");
+            try out.writeAll("  codex-auth-stagger import /path/to/auth.json --alias personal\n");
+            try out.writeAll("  codex-auth-stagger switch --live\n");
         },
         .list => {
-            try out.writeAll("  codex-auth list\n");
-            try out.writeAll("  codex-auth list --active\n");
-            try out.writeAll("  codex-auth list --live\n");
-            try out.writeAll("  codex-auth list --api\n");
-            try out.writeAll("  codex-auth list --skip-api\n");
+            try out.writeAll("  codex-auth-stagger list\n");
+            try out.writeAll("  codex-auth-stagger list --active\n");
+            try out.writeAll("  codex-auth-stagger list --live\n");
+            try out.writeAll("  codex-auth-stagger list --api\n");
+            try out.writeAll("  codex-auth-stagger list --skip-api\n");
         },
         .login => {
-            try out.writeAll("  codex-auth login\n");
-            try out.writeAll("  codex-auth login --device-auth\n");
+            try out.writeAll("  codex-auth-stagger login\n");
+            try out.writeAll("  codex-auth-stagger login --device-auth\n");
         },
         .import_auth => {
-            try out.writeAll("  codex-auth import /path/to/auth.json --alias personal\n");
-            try out.writeAll("  codex-auth import --cpa /path/to/token.json --alias work\n");
-            try out.writeAll("  codex-auth import --purge\n");
+            try out.writeAll("  codex-auth-stagger import /path/to/auth.json --alias personal\n");
+            try out.writeAll("  codex-auth-stagger import --cpa /path/to/token.json --alias work\n");
+            try out.writeAll("  codex-auth-stagger import --purge\n");
         },
         .export_auth => {
-            try out.writeAll("  codex-auth export\n");
-            try out.writeAll("  codex-auth export /path/to/backup\n");
-            try out.writeAll("  codex-auth export --cpa /path/to/cpa-backup\n");
+            try out.writeAll("  codex-auth-stagger export\n");
+            try out.writeAll("  codex-auth-stagger export /path/to/backup\n");
+            try out.writeAll("  codex-auth-stagger export --cpa /path/to/cpa-backup\n");
         },
         .switch_account => {
-            try out.writeAll("  codex-auth switch\n");
-            try out.writeAll("  codex-auth switch -\n");
-            try out.writeAll("  codex-auth switch --live\n");
-            try out.writeAll("  codex-auth switch --api\n");
-            try out.writeAll("  codex-auth switch --skip-api\n");
-            try out.writeAll("  codex-auth switch personal\n");
-            try out.writeAll("  codex-auth switch john@example.com\n");
-            try out.writeAll("  codex-auth switch 02\n");
-            try out.writeAll("  codex-auth switch work\n");
+            try out.writeAll("  codex-auth-stagger switch\n");
+            try out.writeAll("  codex-auth-stagger switch -\n");
+            try out.writeAll("  codex-auth-stagger switch --live\n");
+            try out.writeAll("  codex-auth-stagger switch --api\n");
+            try out.writeAll("  codex-auth-stagger switch --skip-api\n");
+            try out.writeAll("  codex-auth-stagger switch personal\n");
+            try out.writeAll("  codex-auth-stagger switch john@example.com\n");
+            try out.writeAll("  codex-auth-stagger switch 02\n");
+            try out.writeAll("  codex-auth-stagger switch work\n");
         },
         .remove_account => {
-            try out.writeAll("  codex-auth remove\n");
-            try out.writeAll("  codex-auth remove --live\n");
-            try out.writeAll("  codex-auth remove --api\n");
-            try out.writeAll("  codex-auth remove --skip-api\n");
-            try out.writeAll("  codex-auth remove 01 03\n");
-            try out.writeAll("  codex-auth remove work personal\n");
-            try out.writeAll("  codex-auth remove john@example.com jane@example.com\n");
-            try out.writeAll("  codex-auth remove --all\n");
+            try out.writeAll("  codex-auth-stagger remove\n");
+            try out.writeAll("  codex-auth-stagger remove --live\n");
+            try out.writeAll("  codex-auth-stagger remove --api\n");
+            try out.writeAll("  codex-auth-stagger remove --skip-api\n");
+            try out.writeAll("  codex-auth-stagger remove 01 03\n");
+            try out.writeAll("  codex-auth-stagger remove work personal\n");
+            try out.writeAll("  codex-auth-stagger remove john@example.com jane@example.com\n");
+            try out.writeAll("  codex-auth-stagger remove --all\n");
         },
         .alias => {
-            try out.writeAll("  codex-auth alias set 02 work\n");
-            try out.writeAll("  codex-auth alias set john@example.com personal\n");
-            try out.writeAll("  codex-auth alias set old-name new-name\n");
-            try out.writeAll("  codex-auth alias clear work\n");
+            try out.writeAll("  codex-auth-stagger alias set 02 work\n");
+            try out.writeAll("  codex-auth-stagger alias set john@example.com personal\n");
+            try out.writeAll("  codex-auth-stagger alias set old-name new-name\n");
+            try out.writeAll("  codex-auth-stagger alias clear work\n");
         },
         .clean => {
-            try out.writeAll("  codex-auth clean\n");
-            try out.writeAll("  codex-auth clean background\n");
+            try out.writeAll("  codex-auth-stagger clean\n");
+            try out.writeAll("  codex-auth-stagger clean background\n");
         },
         .config => {
-            try out.writeAll("  codex-auth config live --interval 60\n");
+            try out.writeAll("  codex-auth-stagger config live --interval 60\n");
         },
         .app => {
-            try out.writeAll("  codex-auth app\n");
-            try out.writeAll("  codex-auth app --platform win\n");
+            try out.writeAll("  codex-auth-stagger app\n");
+            try out.writeAll("  codex-auth-stagger app --platform win\n");
         },
         .stagger => {
-            try out.writeAll("  codex-auth stagger configure --primary personal --secondary work\n");
-            try out.writeAll("  codex-auth stagger tick --dry-run\n");
-            try out.writeAll("  codex-auth stagger status\n");
+            try out.writeAll("  codex-auth-stagger stagger configure --primary personal --secondary work\n");
+            try out.writeAll("  codex-auth-stagger stagger tick --dry-run\n");
+            try out.writeAll("  codex-auth-stagger stagger status\n");
         },
     }
 }

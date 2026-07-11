@@ -1,10 +1,10 @@
-# `codex-auth login`
+# `codex-auth-stagger login`
 
 ## Usage
 
 ```shell
-codex-auth login
-codex-auth login --device-auth
+codex-auth-stagger login
+codex-auth-stagger login --device-auth
 ```
 
 ## Behavior

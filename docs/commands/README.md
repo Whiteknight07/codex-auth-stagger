@@ -1,6 +1,6 @@
 # Command Reference
 
-This directory documents command behavior by command. Use `codex-auth <command> --help` for the shortest in-terminal usage form.
+This directory documents command behavior by command. Use `codex-auth-stagger <command> --help` for the shortest in-terminal usage form.
 
 ## Commands
 

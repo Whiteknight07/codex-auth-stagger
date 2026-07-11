@@ -123,7 +123,7 @@ fn buildCliBinary(allocator: std.mem.Allocator, project_root: []const u8) !void 
 }
 
 fn builtCliPathAlloc(allocator: std.mem.Allocator, project_root: []const u8) ![]u8 {
-    const exe_name = if (builtin.os.tag == .windows) "codex-auth.exe" else "codex-auth";
+    const exe_name = if (builtin.os.tag == .windows) "codex-auth-stagger.exe" else "codex-auth-stagger";
     const install_prefix = getEnvVarOwned(allocator, cli_integration_install_prefix_env) catch |err| switch (err) {
         error.EnvironmentVariableNotFound => null,
         else => return err,
@@ -2199,7 +2199,7 @@ test "Scenario: Given default api usage when rendering help then skip-api note s
     defer gpa.free(result.stderr);
 
     try expectSuccess(result);
-    try std.testing.expect(std.mem.indexOf(u8, result.stdout, "codex-auth") != null);
+    try std.testing.expect(std.mem.indexOf(u8, result.stdout, "codex-auth-stagger") != null);
     try std.testing.expect(std.mem.indexOf(u8, result.stdout, "Usage API:") == null);
     try std.testing.expect(std.mem.indexOf(u8, result.stdout, "Account API:") == null);
     try std.testing.expect(std.mem.indexOf(u8, result.stdout, "API-backed refresh is the default") != null);
@@ -4377,7 +4377,7 @@ test "Scenario: Given unsupported native host when launching app then command fa
 
     try expectFailure(result);
     try std.testing.expectEqualStrings("", result.stdout);
-    try std.testing.expect(std.mem.indexOf(u8, result.stderr, "app launch is supported only from the Windows or macOS codex-auth executable.\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, result.stderr, "app launch is supported only from the Windows or macOS codex-auth-stagger executable.\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, result.stderr, "Environment Configuration") == null);
 }
 
@@ -4408,7 +4408,7 @@ test "Scenario: Given unsupported native host when launching app then managed CL
 
     try expectFailure(result);
     try std.testing.expectEqualStrings("", result.stdout);
-    try std.testing.expect(std.mem.indexOf(u8, result.stderr, "app launch is supported only from the Windows or macOS codex-auth executable.\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, result.stderr, "app launch is supported only from the Windows or macOS codex-auth-stagger executable.\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, result.stderr, "Environment Configuration") == null);
 
     var codex_home_dir = try tmp.dir.openDir(".codex", .{});
@@ -4444,7 +4444,7 @@ test "Scenario: Given unsupported native host with missing explicit codex CLI pa
 
     try expectFailure(result);
     try std.testing.expectEqualStrings("", result.stdout);
-    try std.testing.expect(std.mem.indexOf(u8, result.stderr, "app launch is supported only from the Windows or macOS codex-auth executable.\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, result.stderr, "app launch is supported only from the Windows or macOS codex-auth-stagger executable.\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, result.stderr, "ERROR: --codex-cli-path: Path does not exist\n") == null);
     try std.testing.expect(std.mem.indexOf(u8, result.stderr, missing_cli_path) == null);
     try std.testing.expect(std.mem.indexOf(u8, result.stderr, "Environment Configuration") == null);

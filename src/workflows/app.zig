@@ -639,7 +639,7 @@ fn launchApp(
         }
         return launchMac(allocator, target, cli_path.value, home);
     }
-    try writeAppError("app launch is supported only from the Windows or macOS codex-auth executable.\n");
+    try writeAppError("app launch is supported only from the Windows or macOS codex-auth-stagger executable.\n");
     return error.UnsupportedPlatform;
 }
 
@@ -647,11 +647,11 @@ fn validateAppPlatform(value: ?types.AppPlatform) !void {
     const platform = value orelse return;
     switch (platform) {
         .win, .wsl => if (builtin.os.tag != .windows) {
-            try writeAppError("app with `--platform win` or `--platform wsl` must run from the Windows codex-auth executable.\n");
+            try writeAppError("app with `--platform win` or `--platform wsl` must run from the Windows codex-auth-stagger executable.\n");
             return error.WindowsAppPlatformRequiresWindows;
         },
         .mac => if (builtin.os.tag != .macos) {
-            try writeAppError("app with `--platform mac` must run from the macOS codex-auth executable.\n");
+            try writeAppError("app with `--platform mac` must run from the macOS codex-auth-stagger executable.\n");
             return error.MacAppPlatformRequiresMacOS;
         },
     }
@@ -662,7 +662,7 @@ fn validateNativeAppLaunchHost(platform: ?types.AppPlatform) !void {
     switch (builtin.os.tag) {
         .windows, .macos => return,
         else => {
-            try writeAppError("app launch is supported only from the Windows or macOS codex-auth executable.\n");
+            try writeAppError("app launch is supported only from the Windows or macOS codex-auth-stagger executable.\n");
             return error.UnsupportedPlatform;
         },
     }

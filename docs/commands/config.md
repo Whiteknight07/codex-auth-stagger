@@ -1,9 +1,9 @@
-# `codex-auth config`
+# `codex-auth-stagger config`
 
 ## Usage
 
 ```shell
-codex-auth config live --interval <seconds>
+codex-auth-stagger config live --interval <seconds>
 ```
 
 ## Live Refresh Config

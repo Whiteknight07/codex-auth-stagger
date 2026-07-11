@@ -43,7 +43,7 @@ pub fn printVersion() !void {
     var stdout: io_util.Stdout = undefined;
     stdout.init();
     const out = stdout.out();
-    try out.print("codex-auth {s}\n", .{version.app_version});
+    try out.print("codex-auth-stagger {s}\n", .{version.app_version});
     try out.flush();
 }
 
@@ -246,7 +246,7 @@ pub fn printSwitchRequiresTtyError() !void {
     try writeErrorPrefixTo(out, use_color);
     try out.writeAll(" interactive switch requires a TTY.\n");
     try writeHintPrefixTo(out, use_color);
-    try out.writeAll(" Run `codex-auth switch` in a terminal, or narrow `codex-auth switch <alias|email|display-number|query>` to one account.\n");
+    try out.writeAll(" Run `codex-auth-stagger switch` in a terminal, or narrow `codex-auth-stagger switch <alias|email|display-number|query>` to one account.\n");
     try out.flush();
 }
 
@@ -258,7 +258,7 @@ pub fn printListRequiresTtyError() !void {
     try writeErrorPrefixTo(out, use_color);
     try out.writeAll(" live list requires a TTY.\n");
     try writeHintPrefixTo(out, use_color);
-    try out.writeAll(" Run `codex-auth list --live` in a terminal.\n");
+    try out.writeAll(" Run `codex-auth-stagger list --live` in a terminal.\n");
     try out.flush();
 }
 
@@ -270,7 +270,7 @@ pub fn printRemoveRequiresTtyError() !void {
     try writeErrorPrefixTo(out, use_color);
     try out.writeAll(" interactive remove requires a TTY.\n");
     try writeHintPrefixTo(out, use_color);
-    try out.writeAll(" Use `codex-auth remove <alias|email|display-number|query>...` or `codex-auth remove --all` instead.\n");
+    try out.writeAll(" Use `codex-auth-stagger remove <alias|email|display-number|query>...` or `codex-auth-stagger remove --all` instead.\n");
     try out.flush();
 }
 

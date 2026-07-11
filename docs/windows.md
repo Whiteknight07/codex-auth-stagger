@@ -3,7 +3,7 @@
 ## CLI output
 
 Windows console hosts vary in how they handle UTF-8 text and ANSI escape
-sequences. `codex-auth` keeps Windows CLI output conservative so PowerShell,
+sequences. `codex-auth-stagger` keeps Windows CLI output conservative so PowerShell,
 Windows Terminal, `cmd.exe`, and CI logs stay readable.
 
 ### Color

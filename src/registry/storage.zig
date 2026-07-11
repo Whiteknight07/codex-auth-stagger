@@ -410,7 +410,7 @@ fn applySchemaMigrations(reg: *Registry, loaded_schema_version: u32) void {
 fn logUnsupportedRegistryVersion(version_value: u32) void {
     if (builtin.is_test) return;
     std.log.err(
-        "registry schema version {d} is not supported by codex-auth {s} (supports up to {d})",
+        "registry schema version {d} is not supported by codex-auth-stagger {s} (supports up to {d})",
         .{ version_value, version.app_version, current_schema_version },
     );
 }
@@ -456,7 +456,7 @@ pub fn loadRegistry(allocator: std.mem.Allocator, codex_home: []const u8) !Regis
         3, 4 => try loadCurrentRegistry(allocator, root_obj),
         else => {
             std.log.err(
-                "registry schema_version {d} is older than the minimum supported {d}; use an intermediate codex-auth release or import --purge",
+                "registry schema_version {d} is older than the minimum supported {d}; use an intermediate codex-auth-stagger release or import --purge",
                 .{ schema_version, min_supported_schema_version },
             );
             return error.UnsupportedRegistryVersion;

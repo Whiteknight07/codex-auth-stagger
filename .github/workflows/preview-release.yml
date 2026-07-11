@@ -16,22 +16,22 @@ jobs:
         include:
           - id: linux-x64
             zig_target: x86_64-linux-gnu
-            binary_name: codex-auth
+            binary_name: codex-auth-stagger
           - id: linux-arm64
             zig_target: aarch64-linux-gnu
-            binary_name: codex-auth
+            binary_name: codex-auth-stagger
           - id: darwin-x64
             zig_target: x86_64-macos-none
-            binary_name: codex-auth
+            binary_name: codex-auth-stagger
           - id: darwin-arm64
             zig_target: aarch64-macos-none
-            binary_name: codex-auth
+            binary_name: codex-auth-stagger
           - id: win32-x64
             zig_target: x86_64-windows-gnu
-            binary_name: codex-auth.exe
+            binary_name: codex-auth-stagger.exe
           - id: win32-arm64
             zig_target: aarch64-windows-gnu
-            binary_name: codex-auth.exe
+            binary_name: codex-auth-stagger.exe
 
     steps:
       - name: Checkout
@@ -98,9 +98,9 @@ jobs:
         run: >
           npx pkg-pr-new publish --bin --commentWithSha
           ./dist/npm/root
-          ./dist/npm/codex-auth-linux-x64
-          ./dist/npm/codex-auth-linux-arm64
-          ./dist/npm/codex-auth-darwin-x64
-          ./dist/npm/codex-auth-darwin-arm64
-          ./dist/npm/codex-auth-win32-x64
-          ./dist/npm/codex-auth-win32-arm64
+          ./dist/npm/codex-auth-stagger-linux-x64
+          ./dist/npm/codex-auth-stagger-linux-arm64
+          ./dist/npm/codex-auth-stagger-darwin-x64
+          ./dist/npm/codex-auth-stagger-darwin-arm64
+          ./dist/npm/codex-auth-stagger-win32-x64
+          ./dist/npm/codex-auth-stagger-win32-arm64

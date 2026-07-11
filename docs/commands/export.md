@@ -1,10 +1,10 @@
-# `codex-auth export`
+# `codex-auth-stagger export`
 
 ## Usage
 
 ```shell
-codex-auth export [<dir>]
-codex-auth export --cpa [<dir>]
+codex-auth-stagger export [<dir>]
+codex-auth-stagger export --cpa [<dir>]
 ```
 
 ## Standard Export
@@ -12,7 +12,7 @@ codex-auth export --cpa [<dir>]
 - Exports stored account auth snapshots.
 - A directory path writes direct child `*.auth.json` files to that directory.
 - Without a directory path, files are written to `CODEX_HOME/accounts/backup`.
-- The exported directory can be imported with `codex-auth import <dir>`.
+- The exported directory can be imported with `codex-auth-stagger import <dir>`.
 
 ## CLIProxyAPI Export
 
@@ -20,7 +20,7 @@ codex-auth export --cpa [<dir>]
 
 - A directory path writes direct child `.json` files to that directory.
 - Without a directory path, files are written to `CODEX_HOME/accounts/backup`.
-- The exported directory can be imported with `codex-auth import --cpa <dir>`.
+- The exported directory can be imported with `codex-auth-stagger import --cpa <dir>`.
 
 ## Output
 

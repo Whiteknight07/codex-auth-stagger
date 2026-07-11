@@ -127,28 +127,28 @@ jobs:
         include:
           - id: linux-x64
             zig_target: x86_64-linux-gnu
-            binary_name: codex-auth
-            archive_name: codex-auth-Linux-X64.tar.gz
+            binary_name: codex-auth-stagger
+            archive_name: codex-auth-stagger-Linux-X64.tar.gz
           - id: linux-arm64
             zig_target: aarch64-linux-gnu
-            binary_name: codex-auth
-            archive_name: codex-auth-Linux-ARM64.tar.gz
+            binary_name: codex-auth-stagger
+            archive_name: codex-auth-stagger-Linux-ARM64.tar.gz
           - id: darwin-x64
             zig_target: x86_64-macos-none
-            binary_name: codex-auth
-            archive_name: codex-auth-macOS-X64.tar.gz
+            binary_name: codex-auth-stagger
+            archive_name: codex-auth-stagger-macOS-X64.tar.gz
           - id: darwin-arm64
             zig_target: aarch64-macos-none
-            binary_name: codex-auth
-            archive_name: codex-auth-macOS-ARM64.tar.gz
+            binary_name: codex-auth-stagger
+            archive_name: codex-auth-stagger-macOS-ARM64.tar.gz
           - id: win32-x64
             zig_target: x86_64-windows-gnu
-            binary_name: codex-auth.exe
-            archive_name: codex-auth-Windows-X64.zip
+            binary_name: codex-auth-stagger.exe
+            archive_name: codex-auth-stagger-Windows-X64.zip
           - id: win32-arm64
             zig_target: aarch64-windows-gnu
-            binary_name: codex-auth.exe
-            archive_name: codex-auth-Windows-ARM64.zip
+            binary_name: codex-auth-stagger.exe
+            archive_name: codex-auth-stagger-Windows-ARM64.zip
 
     steps:
       - name: Checkout
@@ -403,7 +403,7 @@ jobs:
         run: npm pack ./dist/npm/root --pack-destination ./dist/packed
 
       - name: Pack host platform package
-        run: npm pack ./dist/npm/codex-auth-linux-x64 --pack-destination ./dist/packed
+        run: npm pack ./dist/npm/codex-auth-stagger-linux-x64 --pack-destination ./dist/packed
 
       - name: Smoke install packed tarballs
         shell: bash
@@ -411,8 +411,8 @@ jobs:
           mkdir -p smoke
           cd smoke
           npm init -y
-          npm install "../dist/packed/loongphy-codex-auth-linux-x64-${PACKAGE_VERSION}.tgz" "../dist/packed/loongphy-codex-auth-${PACKAGE_VERSION}.tgz"
-          ./node_modules/.bin/codex-auth --version
+          npm install "../dist/packed/whiteknight07-codex-auth-stagger-linux-x64-${PACKAGE_VERSION}.tgz" "../dist/packed/whiteknight07-codex-auth-stagger-${PACKAGE_VERSION}.tgz"
+          ./node_modules/.bin/codex-auth-stagger --version
 
       - name: Set npm dist-tag
         shell: bash
@@ -427,12 +427,12 @@ jobs:
         shell: bash
         run: |
           for dir in \
-            codex-auth-linux-x64 \
-            codex-auth-linux-arm64 \
-            codex-auth-darwin-x64 \
-            codex-auth-darwin-arm64 \
-            codex-auth-win32-x64 \
-            codex-auth-win32-arm64
+            codex-auth-stagger-linux-x64 \
+            codex-auth-stagger-linux-arm64 \
+            codex-auth-stagger-darwin-x64 \
+            codex-auth-stagger-darwin-arm64 \
+            codex-auth-stagger-win32-x64 \
+            codex-auth-stagger-win32-arm64
           do
             npm publish "./dist/npm/${dir}" --access public --tag "${NPM_DIST_TAG}"
           done

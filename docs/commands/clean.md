@@ -1,10 +1,10 @@
-# `codex-auth clean`
+# `codex-auth-stagger clean`
 
 ## Usage
 
 ```shell
-codex-auth clean
-codex-auth clean background
+codex-auth-stagger clean
+codex-auth-stagger clean background
 ```
 
 ## Behavior

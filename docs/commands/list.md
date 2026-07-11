@@ -1,13 +1,13 @@
-# `codex-auth list`
+# `codex-auth-stagger list`
 
 ## Usage
 
 ```shell
-codex-auth list
-codex-auth list --active
-codex-auth list --live
-codex-auth list --api
-codex-auth list --skip-api
+codex-auth-stagger list
+codex-auth-stagger list --active
+codex-auth-stagger list --live
+codex-auth-stagger list --api
+codex-auth-stagger list --skip-api
 ```
 
 ## Behavior

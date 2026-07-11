@@ -1,16 +1,16 @@
-# `codex-auth stagger`
+# `codex-auth-stagger stagger`
 
 `stagger` schedules two selected accounts into separate usage windows. It is designed for accounts you manage yourself and is deliberately conservative: when it cannot establish that an account is safe to use, it does not switch or anchor it.
 
 ## Usage
 
 ```shell
-codex-auth stagger configure --primary <selector> --secondary <selector> [--spacing-minutes <1..299>] [--weekly-reserve-percent <0..99>]
-codex-auth stagger tick [--dry-run] [--api|--skip-api]
-codex-auth stagger status
-codex-auth stagger enable
-codex-auth stagger disable
-codex-auth stagger uninstall
+codex-auth-stagger stagger configure --primary <selector> --secondary <selector> [--spacing-minutes <1..299>] [--weekly-reserve-percent <0..99>]
+codex-auth-stagger stagger tick [--dry-run] [--api|--skip-api]
+codex-auth-stagger stagger status
+codex-auth-stagger stagger enable
+codex-auth-stagger stagger disable
+codex-auth-stagger stagger uninstall
 ```
 
 `configure` requires two distinct selectors. Selectors use the same local matching rules as `switch`; an unmatched or ambiguous selector is rejected. The default spacing is 150 minutes and the default weekly reserve is 5 percent.
@@ -18,18 +18,18 @@ codex-auth stagger uninstall
 ## Recommended Setup
 
 1. Configure two distinct managed accounts.
-2. Run `codex-auth stagger status` to confirm the saved configuration.
-3. Run `codex-auth stagger tick --dry-run` and review the proposed outcome.
+2. Run `codex-auth-stagger stagger status` to confirm the saved configuration.
+3. Run `codex-auth-stagger stagger tick --dry-run` and review the proposed outcome.
 4. Enable the macOS scheduler only after the dry run is satisfactory.
 
 ```shell
-codex-auth stagger configure --primary personal --secondary work
-codex-auth stagger status
-codex-auth stagger tick --dry-run
-codex-auth stagger enable
+codex-auth-stagger stagger configure --primary personal --secondary work
+codex-auth-stagger stagger status
+codex-auth-stagger stagger tick --dry-run
+codex-auth-stagger stagger enable
 ```
 
-Each scheduled invocation runs one `tick` and exits. `codex-auth` does not run a permanent daemon; on macOS, the operating system invokes future ticks.
+Each scheduled invocation runs one `tick` and exits. `codex-auth-stagger` does not run a permanent daemon; on macOS, the operating system invokes future ticks.
 
 ## Usage Data and Safety
 
@@ -56,7 +56,7 @@ Scheduler configuration and state are private files under `$CODEX_HOME/accounts/
 
 ## Returning to Manual Switching
 
-Run `codex-auth stagger disable`, then use `codex-auth switch` as usual. Disabling the stagger scheduler does not remove managed accounts or change the currently active account.
+Run `codex-auth-stagger stagger disable`, then use `codex-auth-stagger switch` as usual. Disabling the stagger scheduler does not remove managed accounts or change the currently active account.
 
 If you kept a legacy switching fallback during migration, leave it stopped while stagger scheduling is enabled. Do not run two automatic switchers at once. After disabling stagger, you can continue manual switching without starting that fallback.
 

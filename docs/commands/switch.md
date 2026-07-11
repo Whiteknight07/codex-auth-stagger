@@ -1,26 +1,26 @@
-# `codex-auth switch`
+# `codex-auth-stagger switch`
 
 ## Usage
 
 ```shell
-codex-auth switch -
-codex-auth switch [--api|--skip-api]
-codex-auth switch --live [--api|--skip-api]
-codex-auth switch <query>
+codex-auth-stagger switch -
+codex-auth-stagger switch [--api|--skip-api]
+codex-auth-stagger switch --live [--api|--skip-api]
+codex-auth-stagger switch <query>
 ```
 
 ## Previous Switch
 
-`codex-auth switch -` switches to the previous active account.
+`codex-auth-stagger switch -` switches to the previous active account.
 
-- `codex-auth -` is a shortcut for the same behavior.
+- `codex-auth-stagger -` is a shortcut for the same behavior.
 - The command fails when no previous account has been recorded.
 - The command fails when the recorded previous account was removed.
 - `switch -` does not accept `--live`, `--api`, or `--skip-api`.
 
 ## Interactive Switch
 
-`codex-auth switch` opens the account picker and exits after one successful switch.
+`codex-auth-stagger switch` opens the account picker and exits after one successful switch.
 
 - The picker uses the same account ordering as `list`.
 - `q` quits without switching.
@@ -29,7 +29,7 @@ codex-auth switch <query>
 
 ## Live Switch
 
-`codex-auth switch --live` keeps the picker open after each successful switch.
+`codex-auth-stagger switch --live` keeps the picker open after each successful switch.
 
 - The display refreshes on a timer.
 - A successful switch patches the current display immediately.
@@ -38,7 +38,7 @@ codex-auth switch <query>
 
 ## Query Switch
 
-`codex-auth switch <query>` resolves the target from stored local data and does not run remote refresh.
+`codex-auth-stagger switch <query>` resolves the target from stored local data and does not run remote refresh.
 
 Selectors can match:
 

@@ -1,16 +1,16 @@
-# `codex-auth app`
+# `codex-auth-stagger app`
 
 ## Usage
 
 ```shell
-codex-auth app [--id <id>] [--codex-cli-path <path>] [--codex-home <path>] [--platform win|wsl|mac]
+codex-auth-stagger app [--id <id>] [--codex-cli-path <path>] [--codex-home <path>] [--platform win|wsl|mac]
 ```
 
 ## Behavior
 
 Launches the official Codex App with per-process environment overrides.
 
-- `codex-auth app` launches the app. There is no `launch` subcommand.
+- `codex-auth-stagger app` launches the app. There is no `launch` subcommand.
 - If the Codex App is already running, `app` prints that status and exits before
   resolving or downloading the managed CLI.
 - `--id <id>` selects the packaged app to launch. On Windows it accepts an
@@ -70,7 +70,7 @@ The default download prepares only the selected platform's
 CPU architecture, such as `win32-x64`, `linux-x64`, `darwin-x64`, or
 `darwin-arm64`.
 
-Windows App launching is handled by the Windows `codex-auth.exe` build. Normal
+Windows App launching is handled by the Windows `codex-auth-stagger.exe` build. Normal
 launch resolves the package name or AUMID and opens `shell:AppsFolder\<AUMID>`.
 The WSL build does not launch Windows App packages.
 

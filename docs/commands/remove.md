@@ -1,17 +1,17 @@
-# `codex-auth remove`
+# `codex-auth-stagger remove`
 
 ## Usage
 
 ```shell
-codex-auth remove [--api|--skip-api]
-codex-auth remove --live [--api|--skip-api]
-codex-auth remove <query> [<query>...]
-codex-auth remove --all
+codex-auth-stagger remove [--api|--skip-api]
+codex-auth-stagger remove --live [--api|--skip-api]
+codex-auth-stagger remove <query> [<query>...]
+codex-auth-stagger remove --all
 ```
 
 ## Interactive Remove
 
-`codex-auth remove` opens the remove picker.
+`codex-auth-stagger remove` opens the remove picker.
 
 - The default picker stays local-only so deletion is not blocked by refresh work.
 - `--api` attempts a best-effort foreground refresh for picker display.
@@ -20,7 +20,7 @@ codex-auth remove --all
 
 ## Live Remove
 
-`codex-auth remove --live` keeps the picker open after each deletion.
+`codex-auth-stagger remove --live` keeps the picker open after each deletion.
 
 - Removed rows disappear from the current display immediately.
 - Existing row overlays stay in place until the next scheduled refresh.
@@ -28,7 +28,7 @@ codex-auth remove --all
 
 ## Query Remove
 
-`codex-auth remove <query> [<query>...]` removes one or more accounts using stored local data.
+`codex-auth-stagger remove <query> [<query>...]` removes one or more accounts using stored local data.
 
 Selectors can match:
 
@@ -44,7 +44,7 @@ If a selector matches multiple accounts in a TTY, `remove` asks for confirmation
 
 ## Remove All
 
-`codex-auth remove --all` clears all accounts tracked in `registry.json`.
+`codex-auth-stagger remove --all` clears all accounts tracked in `registry.json`.
 
 - It does not accept `--live`, `--api`, or `--skip-api`.
 - It deletes managed account snapshots and matching managed backups.

@@ -1,10 +1,10 @@
-# `codex-auth alias`
+# `codex-auth-stagger alias`
 
 ## Usage
 
 ```shell
-codex-auth alias set <query> <alias>
-codex-auth alias clear <query>
+codex-auth-stagger alias set <query> <alias>
+codex-auth-stagger alias clear <query>
 ```
 
 ## Selector Rules
@@ -22,7 +22,7 @@ If one account matches, the command updates that account immediately. If multipl
 
 ## Set Alias
 
-`codex-auth alias set <query> <alias>` stores an alias in `registry.json` for the matched account.
+`codex-auth-stagger alias set <query> <alias>` stores an alias in `registry.json` for the matched account.
 
 - Empty aliases are rejected.
 - All-digit aliases are rejected because numeric selectors already refer to displayed row numbers.
@@ -31,6 +31,6 @@ If one account matches, the command updates that account immediately. If multipl
 
 ## Clear Alias
 
-`codex-auth alias clear <query>` removes the stored alias for the matched account.
+`codex-auth-stagger alias clear <query>` removes the stored alias for the matched account.
 
 If the alias is already empty, the command reports that state and leaves the registry unchanged.

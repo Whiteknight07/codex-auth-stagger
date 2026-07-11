@@ -79,7 +79,7 @@ fn expectArgv(actual: []const []const u8, expected: []const []const u8) !void {
 
 test "Scenario: Given stagger configure selectors when parsing then defaults and owned selectors are preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "stagger", "configure", "--primary", "personal", "--secondary", "work" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "stagger", "configure", "--primary", "personal", "--secondary", "work" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -102,7 +102,7 @@ test "Scenario: Given stagger configure selectors when parsing then defaults and
 
 test "Scenario: Given stagger configure explicit settings when parsing then settings are preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "stagger", "configure", "--primary", "personal", "--secondary", "work", "--spacing-minutes", "299", "--weekly-reserve-percent", "99" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "stagger", "configure", "--primary", "personal", "--secondary", "work", "--spacing-minutes", "299", "--weekly-reserve-percent", "99" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -124,12 +124,12 @@ test "Scenario: Given stagger configure explicit settings when parsing then sett
 test "Scenario: Given invalid stagger command arguments when parsing then usage errors are returned" {
     const gpa = std.testing.allocator;
     const cases = [_]struct { args: []const [:0]const u8, message: []const u8 }{
-        .{ .args = &.{ "codex-auth", "stagger", "configure", "--primary", "personal", "--primary", "work", "--secondary", "work" }, .message = "duplicate `--primary`" },
-        .{ .args = &.{ "codex-auth", "stagger", "configure", "--primary", "personal", "--secondary" }, .message = "requires a selector" },
-        .{ .args = &.{ "codex-auth", "stagger", "configure", "--primary", "personal", "--secondary", "work", "--spacing-minutes", "300" }, .message = "integer from 1 to 299" },
-        .{ .args = &.{ "codex-auth", "stagger", "configure", "--primary", "personal", "--secondary", "work", "--weekly-reserve-percent", "100" }, .message = "integer from 0 to 99" },
-        .{ .args = &.{ "codex-auth", "stagger", "tick", "--api", "--skip-api" }, .message = "cannot be combined" },
-        .{ .args = &.{ "codex-auth", "stagger", "status", "extra" }, .message = "unexpected argument `extra`" },
+        .{ .args = &.{ "codex-auth-stagger", "stagger", "configure", "--primary", "personal", "--primary", "work", "--secondary", "work" }, .message = "duplicate `--primary`" },
+        .{ .args = &.{ "codex-auth-stagger", "stagger", "configure", "--primary", "personal", "--secondary" }, .message = "requires a selector" },
+        .{ .args = &.{ "codex-auth-stagger", "stagger", "configure", "--primary", "personal", "--secondary", "work", "--spacing-minutes", "300" }, .message = "integer from 1 to 299" },
+        .{ .args = &.{ "codex-auth-stagger", "stagger", "configure", "--primary", "personal", "--secondary", "work", "--weekly-reserve-percent", "100" }, .message = "integer from 0 to 99" },
+        .{ .args = &.{ "codex-auth-stagger", "stagger", "tick", "--api", "--skip-api" }, .message = "cannot be combined" },
+        .{ .args = &.{ "codex-auth-stagger", "stagger", "status", "extra" }, .message = "unexpected argument `extra`" },
     };
 
     for (cases) |case| {
@@ -141,7 +141,7 @@ test "Scenario: Given invalid stagger command arguments when parsing then usage 
 
 test "Scenario: Given stagger tick and simple actions when parsing then options and actions are preserved" {
     const gpa = std.testing.allocator;
-    const tick_args = [_][:0]const u8{ "codex-auth", "stagger", "tick", "--dry-run", "--skip-api" };
+    const tick_args = [_][:0]const u8{ "codex-auth-stagger", "stagger", "tick", "--dry-run", "--skip-api" };
     var tick_result = try cli.commands.parseArgs(gpa, &tick_args);
     defer cli.commands.freeParseResult(gpa, &tick_result);
     switch (tick_result) {
@@ -164,7 +164,7 @@ test "Scenario: Given stagger tick and simple actions when parsing then options 
         .{ .name = "disable", .action = .disable },
         .{ .name = "uninstall", .action = .uninstall },
     }) |case| {
-        const args = [_][:0]const u8{ "codex-auth", "stagger", case.name };
+        const args = [_][:0]const u8{ "codex-auth-stagger", "stagger", case.name };
         var result = try cli.commands.parseArgs(gpa, &args);
         defer cli.commands.freeParseResult(gpa, &result);
         switch (result) {
@@ -182,7 +182,7 @@ test "Scenario: Given stagger tick and simple actions when parsing then options 
 
 test "Scenario: Given stagger help when rendering then every command is documented in English" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "help", "stagger" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "help", "stagger" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
     try expectHelp(result, .stagger);
@@ -193,12 +193,12 @@ test "Scenario: Given stagger help when rendering then every command is document
     try cli.help.writeCommandHelp(&aw.writer, false, .stagger);
 
     const help = aw.written();
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger configure --primary <selector> --secondary <selector> [--spacing-minutes <1..299>] [--weekly-reserve-percent <0..99>]") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger tick [--dry-run] [--api|--skip-api]") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger status") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger enable") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger disable") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth stagger uninstall") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger stagger configure --primary <selector> --secondary <selector> [--spacing-minutes <1..299>] [--weekly-reserve-percent <0..99>]") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger stagger tick [--dry-run] [--api|--skip-api]") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger stagger status") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger stagger enable") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger stagger disable") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger stagger uninstall") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "150 minutes") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "5 percent") != null);
 }
@@ -206,7 +206,7 @@ test "Scenario: Given stagger help when rendering then every command is document
 test "Scenario: Given app launch overrides when parsing then IDs and paths are preserved" {
     const gpa = std.testing.allocator;
     const args = [_][:0]const u8{
-        "codex-auth",
+        "codex-auth-stagger",
         "app",
         "--id",
         "OpenAI.Codex",
@@ -239,7 +239,7 @@ test "Scenario: Given app launch overrides when parsing then IDs and paths are p
 
 test "Scenario: Given app passthrough args when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "app", "--", "--trace" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "app", "--", "--trace" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -248,7 +248,7 @@ test "Scenario: Given app passthrough args when parsing then usage error is retu
 
 test "Scenario: Given removed app launch subcommand when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "app", "launch" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "app", "launch" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -257,7 +257,7 @@ test "Scenario: Given removed app launch subcommand when parsing then usage erro
 
 test "Scenario: Given removed app status subcommand when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "app", "status" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "app", "status" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -266,7 +266,7 @@ test "Scenario: Given removed app status subcommand when parsing then usage erro
 
 test "Scenario: Given removed app patch subcommand when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "app", "patch", "--platform", "wsl" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "app", "patch", "--platform", "wsl" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -275,7 +275,7 @@ test "Scenario: Given removed app patch subcommand when parsing then usage error
 
 test "Scenario: Given removed app unpatch subcommand when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "app", "unpatch" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "app", "unpatch" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -284,7 +284,7 @@ test "Scenario: Given removed app unpatch subcommand when parsing then usage err
 
 test "Scenario: Given import path and alias when parsing then import options are preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "import", "/tmp/auth.json", "--alias", "personal" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "import", "/tmp/auth.json", "--alias", "personal" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -305,7 +305,7 @@ test "Scenario: Given import path and alias when parsing then import options are
 
 test "Scenario: Given import purge without path when parsing then purge mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "import", "--purge" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "import", "--purge" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -324,7 +324,7 @@ test "Scenario: Given import purge without path when parsing then purge mode is 
 
 test "Scenario: Given import cpa without path when parsing then cpa mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "import", "--cpa" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "import", "--cpa" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -344,7 +344,7 @@ test "Scenario: Given import cpa without path when parsing then cpa mode is pres
 
 test "Scenario: Given import cpa with purge when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "import", "--cpa", "--purge" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "import", "--cpa", "--purge" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -353,7 +353,7 @@ test "Scenario: Given import cpa with purge when parsing then usage error is ret
 
 test "Scenario: Given export directory when parsing then export options are preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "export", "/tmp/codex-backup" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "export", "/tmp/codex-backup" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -372,7 +372,7 @@ test "Scenario: Given export directory when parsing then export options are pres
 
 test "Scenario: Given export cpa without directory when parsing then cpa mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "export", "--cpa" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "export", "--cpa" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -390,7 +390,7 @@ test "Scenario: Given export cpa without directory when parsing then cpa mode is
 
 test "Scenario: Given import unknown short purge flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "import", "-P", "/tmp/auth.json" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "import", "-P", "/tmp/auth.json" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -399,7 +399,7 @@ test "Scenario: Given import unknown short purge flag when parsing then usage er
 
 test "Scenario: Given import alias without path when parsing then usage error is returned without leaks" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "import", "--alias", "personal" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "import", "--alias", "personal" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -408,7 +408,7 @@ test "Scenario: Given import alias without path when parsing then usage error is
 
 test "Scenario: Given list with extra args when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "list", "unexpected" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "list", "unexpected" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -417,7 +417,7 @@ test "Scenario: Given list with extra args when parsing then usage error is retu
 
 test "Scenario: Given list with skip-api flag when parsing then local-only display mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "list", "--skip-api" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "list", "--skip-api" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -432,7 +432,7 @@ test "Scenario: Given list with skip-api flag when parsing then local-only displ
 
 test "Scenario: Given list with active flag when parsing then active-only refresh mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "list", "--active" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "list", "--active" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -447,7 +447,7 @@ test "Scenario: Given list with active flag when parsing then active-only refres
 
 test "Scenario: Given list with live flag when parsing then live mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "list", "--live" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "list", "--live" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -462,7 +462,7 @@ test "Scenario: Given list with live flag when parsing then live mode is preserv
 
 test "Scenario: Given list with api flag when parsing then forced api mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "list", "--api" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "list", "--api" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -477,7 +477,7 @@ test "Scenario: Given list with api flag when parsing then forced api mode is pr
 
 test "Scenario: Given login with removed no-login flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "login", "--no-login" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "login", "--no-login" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -486,7 +486,7 @@ test "Scenario: Given login with removed no-login flag when parsing then usage e
 
 test "Scenario: Given login with unknown flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "login", "--bad-flag" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "login", "--bad-flag" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -495,7 +495,7 @@ test "Scenario: Given login with unknown flag when parsing then usage error is r
 
 test "Scenario: Given login with device auth flag when parsing then device auth is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "login", "--device-auth" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "login", "--device-auth" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -510,7 +510,7 @@ test "Scenario: Given login with device auth flag when parsing then device auth 
 
 test "Scenario: Given login with duplicate device auth flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "login", "--device-auth", "--device-auth" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "login", "--device-auth", "--device-auth" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -519,7 +519,7 @@ test "Scenario: Given login with duplicate device auth flag when parsing then us
 
 test "Scenario: Given command help selector when parsing then command-specific help is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "help", "list" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "help", "list" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -550,9 +550,9 @@ test "Scenario: Given simple command help when rendering then examples are omitt
     try cli.help.writeCommandHelp(&aw.writer, false, .list);
 
     const help = aw.written();
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth list") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger list") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "List available accounts.") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "Usage:\n  codex-auth list [--live] [--active] [--api|--skip-api]\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "Usage:\n  codex-auth-stagger list [--live] [--active] [--api|--skip-api]\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "Options:\n  --live") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "--active     Refresh only the active account before rendering.") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "--skip-api   Load usage and account data from local data only (may be inaccurate).") != null);
@@ -579,12 +579,12 @@ test "Scenario: Given complex command help when rendering then examples are show
     try cli.help.writeCommandHelp(&aw.writer, false, .import_auth);
 
     const help = aw.written();
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth import") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "Usage:\n  codex-auth import <path> [--alias <alias>]") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger import") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "Usage:\n  codex-auth-stagger import <path> [--alias <alias>]") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "Options:\n  <path>") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "Uses `~/.cli-proxy-api` when omitted.") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "--purge [<path>] Rebuild `registry.json` from auth files.") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "Examples:\n  codex-auth import /path/to/auth.json --alias personal\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "Examples:\n  codex-auth-stagger import /path/to/auth.json --alias personal\n") != null);
 }
 
 test "Scenario: Given switch command help when rendering then target forms and multi-match behavior are shown" {
@@ -595,11 +595,11 @@ test "Scenario: Given switch command help when rendering then target forms and m
     try cli.help.writeCommandHelp(&aw.writer, false, .switch_account);
 
     const help = aw.written();
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth switch <alias|email|display-number|query>") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth switch personal") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth switch john@example.com") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth switch 02") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth switch work") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger switch <alias|email|display-number|query>") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger switch personal") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger switch john@example.com") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger switch 02") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger switch work") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "Options:\n  --live       Open the live switch UI.") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "Switch directly when the target resolves to one account.") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "If a target is ambiguous") == null);
@@ -627,9 +627,9 @@ test "Scenario: Given alias command help when rendering then set and clear examp
     try cli.help.writeCommandHelp(&aw.writer, false, .alias);
 
     const help = aw.written();
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth alias set <alias|email|display-number|query> <alias>") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth alias clear <alias|email|display-number|query>") != null);
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth alias set 02 work") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger alias set <alias|email|display-number|query> <alias>") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger alias clear <alias|email|display-number|query>") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger alias set 02 work") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "New aliases cannot be empty or only digits.") != null);
 }
 
@@ -641,9 +641,9 @@ test "Scenario: Given config help when rendering then live mode is explained" {
     try cli.help.writeCommandHelp(&config_aw.writer, false, .config);
 
     const config_help = config_aw.written();
-    try std.testing.expect(std.mem.indexOf(u8, config_help, "codex-auth config live --interval <seconds>") != null);
+    try std.testing.expect(std.mem.indexOf(u8, config_help, "codex-auth-stagger config live --interval <seconds>") != null);
     try std.testing.expect(std.mem.indexOf(u8, config_help, "live --interval <seconds>\n                    Set the live TUI refresh interval from 5 to 3600 seconds.") != null);
-    try std.testing.expect(std.mem.indexOf(u8, config_help, "codex-auth config live --interval 60") != null);
+    try std.testing.expect(std.mem.indexOf(u8, config_help, "codex-auth-stagger config live --interval 60") != null);
     try std.testing.expect(std.mem.indexOf(u8, config_help, "auto") == null);
 }
 
@@ -762,7 +762,7 @@ test "Scenario: Given color import report when rendering then success and errors
 
 test "Scenario: Given removed top-level auto command when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "auto", "enable" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "auto", "enable" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -771,7 +771,7 @@ test "Scenario: Given removed top-level auto command when parsing then usage err
 
 test "Scenario: Given removed config api section when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "config", "api", "status" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "config", "api", "status" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -780,7 +780,7 @@ test "Scenario: Given removed config api section when parsing then usage error i
 
 test "Scenario: Given config live interval when parsing then interval is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "config", "live", "--interval", "30" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "config", "live", "--interval", "30" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -797,7 +797,7 @@ test "Scenario: Given config live interval when parsing then interval is preserv
 
 test "Scenario: Given config live invalid interval when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "config", "live", "--interval", "4" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "config", "live", "--interval", "4" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -806,7 +806,7 @@ test "Scenario: Given config live invalid interval when parsing then usage error
 
 test "Scenario: Given config live unknown flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "config", "live", "--refresh", "30" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "config", "live", "--refresh", "30" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -815,7 +815,7 @@ test "Scenario: Given config live unknown flag when parsing then usage error is 
 
 test "Scenario: Given alias set when parsing then selector and alias are preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "alias", "set", "john@example.com", "work" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "alias", "set", "john@example.com", "work" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -836,7 +836,7 @@ test "Scenario: Given alias set when parsing then selector and alias are preserv
 
 test "Scenario: Given alias clear when parsing then selector is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "alias", "clear", "work" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "alias", "clear", "work" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -854,7 +854,7 @@ test "Scenario: Given alias clear when parsing then selector is preserved" {
 
 test "Scenario: Given alias set missing value when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "alias", "set", "work" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "alias", "set", "work" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -863,7 +863,7 @@ test "Scenario: Given alias set missing value when parsing then usage error is r
 
 test "Scenario: Given alias unknown subcommand when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "alias", "rename", "work", "personal" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "alias", "rename", "work", "personal" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -872,7 +872,7 @@ test "Scenario: Given alias unknown subcommand when parsing then usage error is 
 
 test "Scenario: Given migrate when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "migrate" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "migrate" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -881,7 +881,7 @@ test "Scenario: Given migrate when parsing then usage error is returned" {
 
 test "Scenario: Given clean when parsing then clean command is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "clean" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "clean" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -896,7 +896,7 @@ test "Scenario: Given clean when parsing then clean command is preserved" {
 
 test "Scenario: Given clean background when parsing then background target is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "clean", "background" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "clean", "background" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -955,7 +955,7 @@ test "Scenario: Given login help when rendering then device auth usage is includ
     try cli.help.writeCommandHelp(&aw.writer, false, .login);
 
     const help = aw.written();
-    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth login --device-auth") != null);
+    try std.testing.expect(std.mem.indexOf(u8, help, "codex-auth-stagger login --device-auth") != null);
     try std.testing.expect(std.mem.indexOf(u8, help, "Options:\n  --device-auth   Run `codex login --device-auth` before adding the account.") != null);
 }
 
@@ -1119,7 +1119,7 @@ test "Scenario: Given retryable Windows build and spawn failures when selecting 
 
 test "Scenario: Given switch with positional query when parsing then non-interactive target is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "user@example.com" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "user@example.com" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1140,7 +1140,7 @@ test "Scenario: Given switch with positional query when parsing then non-interac
 
 test "Scenario: Given top-level dash when parsing then previous switch is selected" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "-" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "-" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1159,7 +1159,7 @@ test "Scenario: Given top-level dash when parsing then previous switch is select
 
 test "Scenario: Given switch dash when parsing then previous switch is selected" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "-" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "-" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1178,7 +1178,7 @@ test "Scenario: Given switch dash when parsing then previous switch is selected"
 
 test "Scenario: Given switch query with skip-api flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--skip-api", "02" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--skip-api", "02" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1187,7 +1187,7 @@ test "Scenario: Given switch query with skip-api flag when parsing then usage er
 
 test "Scenario: Given switch interactive with live flag when parsing then live mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--live" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--live" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1205,7 +1205,7 @@ test "Scenario: Given switch interactive with live flag when parsing then live m
 
 test "Scenario: Given switch with removed auto flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--live", "--auto" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--live", "--auto" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1214,7 +1214,7 @@ test "Scenario: Given switch with removed auto flag when parsing then usage erro
 
 test "Scenario: Given switch with removed auto flag without live when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--auto" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--auto" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1223,7 +1223,7 @@ test "Scenario: Given switch with removed auto flag without live when parsing th
 
 test "Scenario: Given switch query with live flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--live", "02" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--live", "02" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1232,7 +1232,7 @@ test "Scenario: Given switch query with live flag when parsing then usage error 
 
 test "Scenario: Given switch interactive with skip-api flag when parsing then skip-api mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--skip-api" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--skip-api" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1250,7 +1250,7 @@ test "Scenario: Given switch interactive with skip-api flag when parsing then sk
 
 test "Scenario: Given switch interactive with api flag when parsing then api mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--api" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--api" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1268,7 +1268,7 @@ test "Scenario: Given switch interactive with api flag when parsing then api mod
 
 test "Scenario: Given switch query with api flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--api", "02" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--api", "02" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1277,7 +1277,7 @@ test "Scenario: Given switch query with api flag when parsing then usage error i
 
 test "Scenario: Given switch dash with api flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--api", "-" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--api", "-" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1286,7 +1286,7 @@ test "Scenario: Given switch dash with api flag when parsing then usage error is
 
 test "Scenario: Given switch dash with live flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--live", "-" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--live", "-" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1295,7 +1295,7 @@ test "Scenario: Given switch dash with live flag when parsing then usage error i
 
 test "Scenario: Given switch dash with skip-api flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--skip-api", "-" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--skip-api", "-" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1304,7 +1304,7 @@ test "Scenario: Given switch dash with skip-api flag when parsing then usage err
 
 test "Scenario: Given switch query with removed auto flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--live", "--auto", "02" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--live", "--auto", "02" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1313,7 +1313,7 @@ test "Scenario: Given switch query with removed auto flag when parsing then usag
 
 test "Scenario: Given switch with duplicate target when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "a@example.com", "b@example.com" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "a@example.com", "b@example.com" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1322,7 +1322,7 @@ test "Scenario: Given switch with duplicate target when parsing then usage error
 
 test "Scenario: Given switch with unexpected flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "switch", "--email", "a@example.com" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "switch", "--email", "a@example.com" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1331,7 +1331,7 @@ test "Scenario: Given switch with unexpected flag when parsing then usage error 
 
 test "Scenario: Given remove with positional query when parsing then selector mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "user@example.com" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "user@example.com" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1351,7 +1351,7 @@ test "Scenario: Given remove with positional query when parsing then selector mo
 
 test "Scenario: Given remove with all flag when parsing then all mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "--all" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "--all" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1370,7 +1370,7 @@ test "Scenario: Given remove with all flag when parsing then all mode is preserv
 
 test "Scenario: Given remove with multiple selectors when parsing then all selectors are preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "01", "b@example.com", "03" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "01", "b@example.com", "03" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1392,7 +1392,7 @@ test "Scenario: Given remove with multiple selectors when parsing then all selec
 
 test "Scenario: Given interactive remove with skip-api flag when parsing then skip-api mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "--skip-api" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "--skip-api" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1412,7 +1412,7 @@ test "Scenario: Given interactive remove with skip-api flag when parsing then sk
 
 test "Scenario: Given interactive remove with live flag when parsing then live mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "--live" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "--live" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1432,7 +1432,7 @@ test "Scenario: Given interactive remove with live flag when parsing then live m
 
 test "Scenario: Given interactive remove with api flag when parsing then api mode is preserved" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "--api" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "--api" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1452,7 +1452,7 @@ test "Scenario: Given interactive remove with api flag when parsing then api mod
 
 test "Scenario: Given remove query with skip-api flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "--skip-api", "01" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "--skip-api", "01" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1461,7 +1461,7 @@ test "Scenario: Given remove query with skip-api flag when parsing then usage er
 
 test "Scenario: Given remove query with live flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "--live", "01" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "--live", "01" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1470,7 +1470,7 @@ test "Scenario: Given remove query with live flag when parsing then usage error 
 
 test "Scenario: Given remove query with api flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "--api", "work" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "--api", "work" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1479,7 +1479,7 @@ test "Scenario: Given remove query with api flag when parsing then usage error i
 
 test "Scenario: Given remove all with api flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "--api", "--all" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "--api", "--all" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1488,7 +1488,7 @@ test "Scenario: Given remove all with api flag when parsing then usage error is 
 
 test "Scenario: Given remove with unexpected flag when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "--email" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "--email" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 
@@ -1497,7 +1497,7 @@ test "Scenario: Given remove with unexpected flag when parsing then usage error 
 
 test "Scenario: Given remove with all and query when parsing then usage error is returned" {
     const gpa = std.testing.allocator;
-    const args = [_][:0]const u8{ "codex-auth", "remove", "--all", "a@example.com" };
+    const args = [_][:0]const u8{ "codex-auth-stagger", "remove", "--all", "a@example.com" };
     var result = try cli.commands.parseArgs(gpa, &args);
     defer cli.commands.freeParseResult(gpa, &result);
 

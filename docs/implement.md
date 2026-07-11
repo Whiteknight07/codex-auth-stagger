@@ -1,6 +1,6 @@
 # Implementation Details
 
-This document is the implementation index for `codex-auth`. Command-specific behavior lives in [docs/commands/README.md](./commands/README.md).
+This document is the implementation index for `codex-auth-stagger`. Command-specific behavior lives in [docs/commands/README.md](./commands/README.md).
 
 ## Related Documents
 
@@ -13,7 +13,7 @@ This document is the implementation index for `codex-auth`. Command-specific beh
 
 ## Runtime State
 
-`codex-auth` stores local state under the resolved Codex home. The resolution order is:
+`codex-auth-stagger` stores local state under the resolved Codex home. The resolution order is:
 
 1. `CODEX_HOME` when it is set to a non-empty existing directory
 2. `HOME/.codex`
@@ -42,7 +42,7 @@ See [docs/schema-migration.md](./schema-migration.md) for versioning policy and 
 
 ## Account Identity
 
-`codex-auth` separates the user identity from the ChatGPT workspace/account context.
+`codex-auth-stagger` separates the user identity from the ChatGPT workspace/account context.
 
 For ChatGPT OAuth auth:
 
@@ -100,7 +100,7 @@ The empty-registry auto-import path still requires a parseable auth file. Once a
 - Backups are stored under `~/.codex/accounts/` with local-time names.
 - Same-second collisions get a `.N` suffix.
 - The newest five managed backups are retained.
-- `codex-auth clean` is whitelist-based for the current schema and affects only `~/.codex/accounts/`.
+- `codex-auth-stagger clean` is whitelist-based for the current schema and affects only `~/.codex/accounts/`.
 
 Command behavior for cleanup lives in [docs/commands/clean.md](./commands/clean.md).
 

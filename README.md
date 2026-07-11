@@ -1,26 +1,26 @@
-# Codex Auth [![latest release](https://img.shields.io/github/v/release/Loongphy/codex-auth?sort=semver&label=latest)](https://github.com/Loongphy/codex-auth/releases/latest) [![latest pre-release](https://img.shields.io/github/v/release/Loongphy/codex-auth?include_prereleases&sort=semver&filter=*-*&label=pre-release)](https://github.com/Loongphy/codex-auth/releases)
+# Codex Auth Stagger [![latest release](https://img.shields.io/github/v/release/Whiteknight07/codex-auth-stagger?sort=semver&label=latest)](https://github.com/Whiteknight07/codex-auth-stagger/releases/latest) [![latest pre-release](https://img.shields.io/github/v/release/Whiteknight07/codex-auth-stagger?include_prereleases&sort=semver&filter=*-*&label=pre-release)](https://github.com/Whiteknight07/codex-auth-stagger/releases)
 
 ![command list](https://github.com/user-attachments/assets/6c13a2d6-f9da-47ea-8ec8-0394fc072d40)
 
-`codex-auth` is a command-line tool for switching Codex accounts.
+`codex-auth-stagger` is an independent fork of [Loongphy/codex-auth](https://github.com/Loongphy/codex-auth), focused on staggered Codex account switching. It is not affiliated with or published by the upstream project; see [LICENSE](./LICENSE) for the retained upstream MIT license and attribution.
 
 ## Install
 
 Install with npm:
 
 ```shell
-npm install -g @loongphy/codex-auth
+npm install -g @whiteknight07/codex-auth-stagger
 ```
 
 You can also run it without a global install:
 
 ```shell
-npx @loongphy/codex-auth list
+npx @whiteknight07/codex-auth-stagger list
 ```
 
 ## Supported Platforms
 
-`codex-auth` works with these Codex clients:
+`codex-auth-stagger` works with these Codex clients:
 
 - Codex CLI
 - VS Code extension
@@ -33,7 +33,7 @@ npx @loongphy/codex-auth list
 >
 > Install it with `npm i -g @loongphy/codext` and run `codext`.
 >
-> Codex App users can use `codex-auth app`, but it is not stable. See [Details](#codex-app).
+> Codex App users can use `codex-auth-stagger app`, but it is not stable. See [Details](#codex-app).
 
 Install the Codex CLI even if you mainly use the VS Code extension or the App, because it makes adding accounts easier:
 
@@ -41,7 +41,7 @@ Install the Codex CLI even if you mainly use the VS Code extension or the App, b
 npm install -g @openai/codex
 ```
 
-After that, you can use `codex-auth login`, or `codex-auth login --device-auth` to sign in and add accounts more easily.
+After that, you can use `codex-auth-stagger login`, or `codex-auth-stagger login --device-auth` to sign in and add accounts more easily.
 
 ## Commands
 
@@ -53,7 +53,7 @@ Detailed command documentation lives in [docs/commands/README.md](./docs/command
 > To try the latest features, please install the alpha version via:
 >
 > ```bash
-> npm install -g @loongphy/codex-auth@next
+> npm install -g @whiteknight07/codex-auth-stagger@next
 > ```
 > 
 > If you want to downgrade to **v0.2.x**, you may need to manually update the `~/.codex/accounts/registry.json`:
@@ -66,43 +66,43 @@ Detailed command documentation lives in [docs/commands/README.md](./docs/command
 
 | Command | Description |
 |---------|-------------|
-| [`codex-auth list [--live] [--active] [--api\|--skip-api]`](./docs/commands/list.md) | List stored accounts and usage state |
-| [`codex-auth login [--device-auth]`](./docs/commands/login.md) | Run `codex login`, then add the current account |
-| [`codex-auth switch [--live] [--api\|--skip-api]`](./docs/commands/switch.md) | Switch the active account interactively |
-| [`codex-auth switch <query>`](./docs/commands/switch.md) | Switch directly by row number or account selector |
-| [`codex-auth remove [--live] [--api\|--skip-api]`](./docs/commands/remove.md) | Remove accounts interactively |
-| [`codex-auth remove <query> [<query>...]`](./docs/commands/remove.md) | Remove accounts by selector |
-| [`codex-auth remove --all`](./docs/commands/remove.md) | Remove all stored accounts |
-| [`codex-auth alias set <query> <alias>`](./docs/commands/alias.md) | Set an alias for an account |
-| [`codex-auth alias clear <query>`](./docs/commands/alias.md) | Clear the alias for an account |
+| [`codex-auth-stagger list [--live] [--active] [--api\|--skip-api]`](./docs/commands/list.md) | List stored accounts and usage state |
+| [`codex-auth-stagger login [--device-auth]`](./docs/commands/login.md) | Run `codex login`, then add the current account |
+| [`codex-auth-stagger switch [--live] [--api\|--skip-api]`](./docs/commands/switch.md) | Switch the active account interactively |
+| [`codex-auth-stagger switch <query>`](./docs/commands/switch.md) | Switch directly by row number or account selector |
+| [`codex-auth-stagger remove [--live] [--api\|--skip-api]`](./docs/commands/remove.md) | Remove accounts interactively |
+| [`codex-auth-stagger remove <query> [<query>...]`](./docs/commands/remove.md) | Remove accounts by selector |
+| [`codex-auth-stagger remove --all`](./docs/commands/remove.md) | Remove all stored accounts |
+| [`codex-auth-stagger alias set <query> <alias>`](./docs/commands/alias.md) | Set an alias for an account |
+| [`codex-auth-stagger alias clear <query>`](./docs/commands/alias.md) | Clear the alias for an account |
 
 ### Import and Maintenance
 
 | Command | Description |
 |---------|-------------|
-| [`codex-auth import <path> [--alias <alias>]`](./docs/commands/import.md) | Import a single auth file or batch import a folder |
-| [`codex-auth import --cpa [<path>]`](./docs/commands/import.md) | Import CLIProxyAPI token JSON |
-| [`codex-auth import --purge [<path>]`](./docs/commands/import.md) | Rebuild `registry.json` from auth files |
-| [`codex-auth export [<dir>]`](./docs/commands/export.md) | Export stored account auth files |
-| [`codex-auth export --cpa [<dir>]`](./docs/commands/export.md) | Export CLIProxyAPI token JSON |
-| [`codex-auth clean`](./docs/commands/clean.md) | Delete managed backup and stale account files |
+| [`codex-auth-stagger import <path> [--alias <alias>]`](./docs/commands/import.md) | Import a single auth file or batch import a folder |
+| [`codex-auth-stagger import --cpa [<path>]`](./docs/commands/import.md) | Import CLIProxyAPI token JSON |
+| [`codex-auth-stagger import --purge [<path>]`](./docs/commands/import.md) | Rebuild `registry.json` from auth files |
+| [`codex-auth-stagger export [<dir>]`](./docs/commands/export.md) | Export stored account auth files |
+| [`codex-auth-stagger export --cpa [<dir>]`](./docs/commands/export.md) | Export CLIProxyAPI token JSON |
+| [`codex-auth-stagger clean`](./docs/commands/clean.md) | Delete managed backup and stale account files |
 
 ### Configuration
 
 | Command | Description |
 |---------|-------------|
-| [`codex-auth config live --interval <seconds>`](./docs/commands/config.md) | Configure live TUI refresh interval |
+| [`codex-auth-stagger config live --interval <seconds>`](./docs/commands/config.md) | Configure live TUI refresh interval |
 
 ## Quick Examples
 
 ```shell
-codex-auth list
-codex-auth list --active
-codex-auth switch
-codex-auth switch 02
-codex-auth remove work
-codex-auth import /path/to/auth.json --alias personal
-codex-auth list --skip-api
+codex-auth-stagger list
+codex-auth-stagger list --active
+codex-auth-stagger switch
+codex-auth-stagger switch 02
+codex-auth-stagger remove work
+codex-auth-stagger import /path/to/auth.json --alias personal
+codex-auth-stagger list --skip-api
 ```
 
 ## Codex App
@@ -116,7 +116,7 @@ codex-auth list --skip-api
 
 | Command | Description |
 |---------|-------------|
-| [`codex-auth app [--id <id>] [--codex-cli-path <path>]`](./docs/commands/app.md) | Experimental: launch Codex App with detected defaults, CODEX_HOME, CODEX_CLI_PATH, and platform overrides |
+| [`codex-auth-stagger app [--id <id>] [--codex-cli-path <path>]`](./docs/commands/app.md) | Experimental: launch Codex App with detected defaults, CODEX_HOME, CODEX_CLI_PATH, and platform overrides |
 
 Support seamless account switching including:
 
@@ -129,27 +129,27 @@ Support seamless account switching including:
 Remove the npm package:
 
 ```shell
-npm uninstall -g @loongphy/codex-auth
+npm uninstall -g @whiteknight07/codex-auth-stagger
 ```
 
 ## Q&A
 
 ### Why is my usage limit not refreshing?
 
-API-backed refresh is the default. When you pass `--skip-api`, `codex-auth` reads the newest `~/.codex/sessions/**/rollout-*.jsonl` file instead. Recent Codex builds often write `token_count` events with `rate_limits: null`. The local files may still contain older usable usage limit data, but in practice they can lag by several hours, so local-only refresh may show a usage limit snapshot from hours ago instead of your latest state.
+API-backed refresh is the default. When you pass `--skip-api`, `codex-auth-stagger` reads the newest `~/.codex/sessions/**/rollout-*.jsonl` file instead. Recent Codex builds often write `token_count` events with `rate_limits: null`. The local files may still contain older usable usage limit data, but in practice they can lag by several hours, so local-only refresh may show a usage limit snapshot from hours ago instead of your latest state.
 
 - Upstream Codex issue: [openai/codex#14880](https://github.com/openai/codex/issues/14880)
 
 Run the API-backed default with:
 
 ```shell
-codex-auth list
+codex-auth-stagger list
 ```
 
 Run one local-only command with:
 
 ```shell
-codex-auth list --skip-api
+codex-auth-stagger list --skip-api
 ```
 
 Verify with:
@@ -163,7 +163,7 @@ codex exec "say hello"
 This project is provided as-is and use is at your own risk.
 
 **Usage Data Refresh Source:**
-`codex-auth` supports two sources for refreshing account usage/usage limit information:
+`codex-auth-stagger` supports two sources for refreshing account usage/usage limit information:
 
 1. **API (default):** The tool makes direct HTTPS requests to OpenAI's endpoints using your account's access token. This enables both usage refresh and team name refresh. `curl` must be available at runtime.
 2. **Local-only:** With per-command `--skip-api`, the tool scans local `~/.codex/sessions/*/rollout-*.jsonl` files for usage data and skips team name refresh API calls. This mode is safer, but it can be less accurate because recent Codex rollout files often contain `rate_limits: null`, so the latest local usage limit data may lag by several hours.

@@ -17,7 +17,7 @@ pub fn build(b: *std.Build) void {
         .link_libc = true,
     });
     const exe = b.addExecutable(.{
-        .name = "codex-auth",
+        .name = "codex-auth-stagger",
         .root_module = main_module,
     });
     b.installArtifact(exe);
@@ -86,7 +86,7 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
-    const run_step = b.step("run", "Run codex-auth");
+    const run_step = b.step("run", "Run codex-auth-stagger");
     run_step.dependOn(&run_cmd.step);
 
     const test_files = [_][]const u8{

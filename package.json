@@ -1,19 +1,19 @@
 {
-  "name": "@loongphy/codex-auth",
+  "name": "@whiteknight07/codex-auth-stagger",
   "version": "0.3.0-alpha.10",
   "type": "module",
-  "description": "CLI for switching Codex accounts",
+  "description": "Independent fork of Codex Auth for staggered Codex account switching",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Loongphy/codex-auth"
+    "url": "https://github.com/Whiteknight07/codex-auth-stagger"
   },
-  "homepage": "https://github.com/Loongphy/codex-auth",
+  "homepage": "https://github.com/Whiteknight07/codex-auth-stagger",
   "bugs": {
-    "url": "https://github.com/Loongphy/codex-auth/issues"
+    "url": "https://github.com/Whiteknight07/codex-auth-stagger/issues"
   },
   "bin": {
-    "codex-auth": "bin/codex-auth.js"
+    "codex-auth-stagger": "bin/codex-auth-stagger.js"
   },
   "files": [
     "bin/",
@@ -21,12 +21,12 @@
     "README.md"
   ],
   "optionalDependencies": {
-    "@loongphy/codex-auth-linux-x64": "0.3.0-alpha.10",
-    "@loongphy/codex-auth-linux-arm64": "0.3.0-alpha.10",
-    "@loongphy/codex-auth-darwin-x64": "0.3.0-alpha.10",
-    "@loongphy/codex-auth-darwin-arm64": "0.3.0-alpha.10",
-    "@loongphy/codex-auth-win32-x64": "0.3.0-alpha.10",
-    "@loongphy/codex-auth-win32-arm64": "0.3.0-alpha.10"
+    "@whiteknight07/codex-auth-stagger-linux-x64": "0.3.0-alpha.10",
+    "@whiteknight07/codex-auth-stagger-linux-arm64": "0.3.0-alpha.10",
+    "@whiteknight07/codex-auth-stagger-darwin-x64": "0.3.0-alpha.10",
+    "@whiteknight07/codex-auth-stagger-darwin-arm64": "0.3.0-alpha.10",
+    "@whiteknight07/codex-auth-stagger-win32-x64": "0.3.0-alpha.10",
+    "@whiteknight07/codex-auth-stagger-win32-arm64": "0.3.0-alpha.10"
   },
   "scripts": {
     "check:versions": "node scripts/npm/check-versions.mjs",

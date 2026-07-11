@@ -6,79 +6,79 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const repoRoot = path.resolve(__dirname, "..", "..");
-export const rootPackageName = "@loongphy/codex-auth";
+export const rootPackageName = "@whiteknight07/codex-auth-stagger";
 export const rootPublishDirName = "root";
 export const rootPackagePath = path.join(repoRoot, "package.json");
 export const rootReadmePath = path.join(repoRoot, "README.md");
 export const rootLicensePath = path.join(repoRoot, "LICENSE");
-export const rootBinPath = path.join(repoRoot, "bin", "codex-auth.js");
+export const rootBinPath = path.join(repoRoot, "bin", "codex-auth-stagger.js");
 export const zigVersionPath = path.join(repoRoot, "src", "version.zig");
 
 export const platformPackages = [
   {
     id: "linux-x64",
-    packageName: "@loongphy/codex-auth-linux-x64",
-    packageDirName: "codex-auth-linux-x64",
+    packageName: "@whiteknight07/codex-auth-stagger-linux-x64",
+    packageDirName: "codex-auth-stagger-linux-x64",
     os: "linux",
     cpu: "x64",
-    binaryName: "codex-auth",
-    binaryFiles: ["codex-auth"],
-    archiveName: "codex-auth-Linux-X64.tar.gz",
+    binaryName: "codex-auth-stagger",
+    binaryFiles: ["codex-auth-stagger"],
+    archiveName: "codex-auth-stagger-Linux-X64.tar.gz",
     zigTarget: "x86_64-linux-gnu"
   },
   {
     id: "linux-arm64",
-    packageName: "@loongphy/codex-auth-linux-arm64",
-    packageDirName: "codex-auth-linux-arm64",
+    packageName: "@whiteknight07/codex-auth-stagger-linux-arm64",
+    packageDirName: "codex-auth-stagger-linux-arm64",
     os: "linux",
     cpu: "arm64",
-    binaryName: "codex-auth",
-    binaryFiles: ["codex-auth"],
-    archiveName: "codex-auth-Linux-ARM64.tar.gz",
+    binaryName: "codex-auth-stagger",
+    binaryFiles: ["codex-auth-stagger"],
+    archiveName: "codex-auth-stagger-Linux-ARM64.tar.gz",
     zigTarget: "aarch64-linux-gnu"
   },
   {
     id: "darwin-x64",
-    packageName: "@loongphy/codex-auth-darwin-x64",
-    packageDirName: "codex-auth-darwin-x64",
+    packageName: "@whiteknight07/codex-auth-stagger-darwin-x64",
+    packageDirName: "codex-auth-stagger-darwin-x64",
     os: "darwin",
     cpu: "x64",
-    binaryName: "codex-auth",
-    binaryFiles: ["codex-auth"],
-    archiveName: "codex-auth-macOS-X64.tar.gz",
+    binaryName: "codex-auth-stagger",
+    binaryFiles: ["codex-auth-stagger"],
+    archiveName: "codex-auth-stagger-macOS-X64.tar.gz",
     zigTarget: "x86_64-macos-none"
   },
   {
     id: "darwin-arm64",
-    packageName: "@loongphy/codex-auth-darwin-arm64",
-    packageDirName: "codex-auth-darwin-arm64",
+    packageName: "@whiteknight07/codex-auth-stagger-darwin-arm64",
+    packageDirName: "codex-auth-stagger-darwin-arm64",
     os: "darwin",
     cpu: "arm64",
-    binaryName: "codex-auth",
-    binaryFiles: ["codex-auth"],
-    archiveName: "codex-auth-macOS-ARM64.tar.gz",
+    binaryName: "codex-auth-stagger",
+    binaryFiles: ["codex-auth-stagger"],
+    archiveName: "codex-auth-stagger-macOS-ARM64.tar.gz",
     zigTarget: "aarch64-macos-none"
   },
   {
     id: "win32-x64",
-    packageName: "@loongphy/codex-auth-win32-x64",
-    packageDirName: "codex-auth-win32-x64",
+    packageName: "@whiteknight07/codex-auth-stagger-win32-x64",
+    packageDirName: "codex-auth-stagger-win32-x64",
     os: "win32",
     cpu: "x64",
-    binaryName: "codex-auth.exe",
-    binaryFiles: ["codex-auth.exe"],
-    archiveName: "codex-auth-Windows-X64.zip",
+    binaryName: "codex-auth-stagger.exe",
+    binaryFiles: ["codex-auth-stagger.exe"],
+    archiveName: "codex-auth-stagger-Windows-X64.zip",
     zigTarget: "x86_64-windows-gnu"
   },
   {
     id: "win32-arm64",
-    packageName: "@loongphy/codex-auth-win32-arm64",
-    packageDirName: "codex-auth-win32-arm64",
+    packageName: "@whiteknight07/codex-auth-stagger-win32-arm64",
+    packageDirName: "codex-auth-stagger-win32-arm64",
     os: "win32",
     cpu: "arm64",
-    binaryName: "codex-auth.exe",
-    binaryFiles: ["codex-auth.exe"],
-    archiveName: "codex-auth-Windows-ARM64.zip",
+    binaryName: "codex-auth-stagger.exe",
+    binaryFiles: ["codex-auth-stagger.exe"],
+    archiveName: "codex-auth-stagger-Windows-ARM64.zip",
     zigTarget: "aarch64-windows-gnu"
   }
 ];

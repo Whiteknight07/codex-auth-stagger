@@ -1,10 +1,10 @@
 # File Permissions
 
-This document describes how `codex-auth` manages file and directory permissions under `~/.codex`.
+This document describes how `codex-auth-stagger` manages file and directory permissions under `~/.codex`.
 
 ## Directory permissions
 
-On Unix-like systems, `codex-auth` hardens this managed directory to `0700`:
+On Unix-like systems, `codex-auth-stagger` hardens this managed directory to `0700`:
 
 - `<codex_home>/accounts/`
 
@@ -12,7 +12,7 @@ It does not currently force `<codex_home>/` itself to `0700`.
 
 ## Managed sensitive files
 
-On Unix-like systems, `codex-auth` creates these managed sensitive files with `0600` immediately and keeps them private on rewrite/sync paths:
+On Unix-like systems, `codex-auth-stagger` creates these managed sensitive files with `0600` immediately and keeps them private on rewrite/sync paths:
 
 - `<codex_home>/accounts/registry.json`
 - `<codex_home>/accounts/<account file key>.auth.json`
@@ -31,7 +31,7 @@ The live `<codex_home>/auth.json` is intentionally treated differently from the 
 
 On Unix-like systems:
 
-- `codex-auth login` leaves the live file at whatever mode the external `codex login` flow produced.
+- `codex-auth-stagger login` leaves the live file at whatever mode the external `codex login` flow produced.
 - Foreground sync updates the managed snapshot under `accounts/` and does not re-harden the live `auth.json`.
 - When a switch-style flow replaces an existing `<codex_home>/auth.json`, it preserves that file's current mode instead of forcing `0600`.
 - When `<codex_home>/auth.json` is missing and must be recreated from a managed snapshot, the recreated file ends up private because the managed snapshot source is already `0600`.

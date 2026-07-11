@@ -52,19 +52,19 @@ This document describes the repository's CI, preview package publishing, and tag
 ## npm Package Layout
 
 - npm distribution uses one root package plus six platform packages.
-- Root package: `@loongphy/codex-auth`
+- Root package: `@whiteknight07/codex-auth-stagger`
 - Platform packages:
-  - `@loongphy/codex-auth-linux-x64`
-  - `@loongphy/codex-auth-linux-arm64`
-  - `@loongphy/codex-auth-darwin-x64`
-  - `@loongphy/codex-auth-darwin-arm64`
-  - `@loongphy/codex-auth-win32-x64`
-  - `@loongphy/codex-auth-win32-arm64`
-- The root package exposes the `codex-auth` command and depends on the platform packages through `optionalDependencies`.
+  - `@whiteknight07/codex-auth-stagger-linux-x64`
+  - `@whiteknight07/codex-auth-stagger-linux-arm64`
+  - `@whiteknight07/codex-auth-stagger-darwin-x64`
+  - `@whiteknight07/codex-auth-stagger-darwin-arm64`
+  - `@whiteknight07/codex-auth-stagger-win32-x64`
+  - `@whiteknight07/codex-auth-stagger-win32-arm64`
+- The root package exposes the `codex-auth-stagger` command and depends on the platform packages through `optionalDependencies`.
 - Each platform package declares `os` and `cpu`, so npm installs only the matching binary package for the current host platform.
 - GitHub Release assets and npm packages currently target Linux x64, Linux ARM64, macOS x64, macOS ARM64, Windows x64, and Windows ARM64.
 - Platform package metadata, target triples, binary names, and GitHub Release archive names are defined in `scripts/npm/metadata.mjs`.
-- `scripts/npm/check-release-metadata.mjs` verifies that `scripts/npm/metadata.mjs`, `package.json`, `bin/codex-auth.js`, and the release/preview workflow matrices stay aligned.
+- `scripts/npm/check-release-metadata.mjs` verifies that `scripts/npm/metadata.mjs`, `package.json`, `bin/codex-auth-stagger.js`, and the release/preview workflow matrices stay aligned.
 - GitHub Release archives use `.tar.gz` for Linux/macOS targets and `.zip` for Windows targets.
 
 ## CI Workflow
@@ -81,7 +81,7 @@ This document describes the repository's CI, preview package publishing, and tag
 - The staged root preview package has its `optionalDependencies` rewritten to deterministic `pkg.pr.new` platform package URLs for the PR head SHA.
 - Preview publishing then runs a single `pkg.pr.new` publish command across the root package and all six platform packages, so the preview install command keeps the same platform-selective behavior as the real npm release.
 - The staged preview root package also gets a `codexAuthPreviewLabel` field like `pr-6 b6bfcf5`.
-- The root CLI wrapper uses that field so `codex-auth --version` prints `codex-auth <version> (preview pr-6 b6bfcf5)` for preview installs only.
+- The root CLI wrapper uses that field so `codex-auth-stagger --version` prints `codex-auth-stagger <version> (preview pr-6 b6bfcf5)` for preview installs only.
 - `.github/workflows/preview-release.yml` uses `actions/setup-node@v6` with `node-version: lts/*` so preview publishing tracks the latest Node LTS line automatically.
 - `pkg.pr.new` preview publishing requires the pkg.pr.new GitHub App to be installed on the repository before the workflow can publish previews or comment on PRs.
 
@@ -102,8 +102,8 @@ This document describes the repository's CI, preview package publishing, and tag
 - npm publishing uses Trusted Publishing from GitHub Actions, so the publish job must run on a GitHub-hosted runner with `id-token: write`.
 - `.github/workflows/release.yml` uses `actions/setup-node@v6` with Node `24` for the npm packaging and publish steps so the bundled npm CLI supports Trusted Publishing.
 - The `setup-node` steps in `.github/workflows/release.yml` explicitly set `package-manager-cache: false` to avoid future automatic npm cache behavior changes in the release pipeline.
-- npm provenance validation requires the package `repository.url` metadata to match the GitHub repository URL exactly: `https://github.com/Loongphy/codex-auth`
+- npm provenance validation requires the package `repository.url` metadata to match the GitHub repository URL exactly: `https://github.com/Whiteknight07/codex-auth-stagger`
 - `scripts/npm/stage-packages.mjs` stages the root package plus all platform packages from downloaded release artifacts.
-- The npm publish job packs the staged root package and Linux x64 package, installs both into a smoke project, and runs `codex-auth --version` before publishing.
+- The npm publish job packs the staged root package and Linux x64 package, installs both into a smoke project, and runs `codex-auth-stagger --version` before publishing.
 - Stable tags such as `v1.2.3` publish to npm dist-tag `latest`.
 - Prerelease tags such as `v1.2.4-rc.1`, `v1.2.4-beta.1`, and `v1.2.4-alpha.1` publish to npm dist-tag `next`.

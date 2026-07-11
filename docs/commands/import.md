@@ -1,11 +1,11 @@
-# `codex-auth import`
+# `codex-auth-stagger import`
 
 ## Usage
 
 ```shell
-codex-auth import <path> [--alias <alias>]
-codex-auth import --cpa [<path>] [--alias <alias>]
-codex-auth import --purge [<path>]
+codex-auth-stagger import <path> [--alias <alias>]
+codex-auth-stagger import --cpa [<path>] [--alias <alias>]
+codex-auth-stagger import --purge [<path>]
 ```
 
 ## Standard Import

@@ -3,7 +3,7 @@ const runtime = @import("../core/runtime.zig");
 const registry = @import("../registry/root.zig");
 const cli = @import("../cli/root.zig");
 
-pub const label = "com.loongphy.codex-auth.stagger";
+pub const label = "com.whiteknight07.codex-auth-stagger";
 
 pub const Paths = struct {
     plist: []u8,
@@ -130,7 +130,7 @@ pub fn render(allocator: std.mem.Allocator, options: RenderOptions) ![]u8 {
         \\<plist version="1.0">
         \\<dict>
         \\  <key>Label</key>
-        \\  <string>com.loongphy.codex-auth.stagger</string>
+        \\  <string>com.whiteknight07.codex-auth-stagger</string>
         \\  <key>ProgramArguments</key>
         \\  <array>
         \\    <string>

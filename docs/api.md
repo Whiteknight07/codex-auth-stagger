@@ -1,11 +1,11 @@
 # API Refresh
 
-This document is the single source of truth for outbound ChatGPT API refresh behavior in `codex-auth`.
+This document is the single source of truth for outbound ChatGPT API refresh behavior in `codex-auth-stagger`.
 
 All API refresh requests are issued through `curl`.
-`codex-auth` resolves `curl` from `PATH`.
+`codex-auth-stagger` resolves `curl` from `PATH`.
 
-`codex-auth` does not translate platform proxy settings. The curl child process inherits the parent process environment, and curl applies its own proxy environment variable handling.
+`codex-auth-stagger` does not translate platform proxy settings. The curl child process inherits the parent process environment, and curl applies its own proxy environment variable handling.
 
 ## Endpoints
 
@@ -16,7 +16,7 @@ All API refresh requests are issued through `curl`.
 - headers:
   - `Authorization: Bearer <tokens.access_token>`
   - `ChatGPT-Account-Id: <chatgpt_account_id>`
-  - `User-Agent: codex-auth/<version>`
+  - `User-Agent: codex-auth-stagger/<version>`
 
 ### Account Metadata Refresh
 
@@ -25,7 +25,7 @@ All API refresh requests are issued through `curl`.
 - headers:
   - `Authorization: Bearer <tokens.access_token>`
   - `ChatGPT-Account-Id: <chatgpt_account_id>`
-  - `User-Agent: codex-auth/<version>`
+  - `User-Agent: codex-auth-stagger/<version>`
 
 The account metadata response is parsed from `items[].id` and `items[].name`. `name: null` and `name: ""` are both normalized to `account_name = null`. An empty `items` array, or an `items` array with no usable `id`, is treated as unusable and leaves stored `account_name` values unchanged.
 
@@ -103,7 +103,7 @@ Example 1:
 - active record: `user@example.com / Team #1 / account_name = null`
 - same grouped scope: `user@example.com / Team #2 / account_name = null`
 
-Running `codex-auth list` should issue an account metadata request. If the API returns:
+Running `codex-auth-stagger list` should issue an account metadata request. If the API returns:
 
 - `team-1 -> "Workspace Alpha"`
 - `team-2 -> "Workspace Beta"`
@@ -116,7 +116,7 @@ Example 2:
 - same grouped scope: `user@example.com / Team #1 / account_name = null`
 - same grouped scope: `user@example.com / Team #2 / account_name = "Old Workspace"`
 
-Running `codex-auth list` should still issue an account metadata request, because the grouped scope still has missing Team names. If the API returns:
+Running `codex-auth-stagger list` should still issue an account metadata request, because the grouped scope still has missing Team names. If the API returns:
 
 - `team-1 -> "Prod Workspace"`
 - `team-2 -> "Sandbox Workspace"`
