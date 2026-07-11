@@ -4,7 +4,7 @@ const runtime = @import("../core/runtime.zig");
 const registry = @import("../registry/root.zig");
 
 const timeout_ms: u64 = 15_000;
-const output_limit_bytes: usize = 1024;
+const output_limit_bytes: usize = 64 * 1024;
 const random_bytes_count = 16;
 const random_name_len = std.base64.url_safe_no_pad.Encoder.calcSize(random_bytes_count);
 
